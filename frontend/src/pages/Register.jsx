@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from '../hooks/useNavigate';
 import Modal from '../components/Modal';
 import Logo from '../components/Logo';
+import { API_BASE_URL } from '../utils/api';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5008/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
