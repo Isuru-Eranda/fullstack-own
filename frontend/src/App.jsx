@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthProvider';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Profile from './pages/Profile';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
@@ -14,8 +15,9 @@ function AppContent() {
     const handleRouteChange = () => {
       const path = window.location.pathname;
       if (path === '/login') setCurrentPage('login');
-      else if (path === '/register') setCurrentPage('register');
-      else setCurrentPage('home');
+        else if (path === '/register') setCurrentPage('register');
+        else if (path === '/profile') setCurrentPage('profile');
+        else setCurrentPage('home');
     };
 
     handleRouteChange();
@@ -32,6 +34,7 @@ function AppContent() {
       const newPath = args[2];
       if (newPath === '/login') setCurrentPage('login');
       else if (newPath === '/register') setCurrentPage('register');
+      else if (newPath === '/profile') setCurrentPage('profile');
       else setCurrentPage('home');
     };
   }, []);
@@ -49,6 +52,7 @@ function AppContent() {
     <>
       {currentPage === 'login' && <Login />}
       {currentPage === 'register' && <Register />}
+      {currentPage === 'profile' && <Profile />}
       {currentPage === 'home' && <Home />}
     </>
   );

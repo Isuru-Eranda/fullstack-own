@@ -21,10 +21,14 @@ export default function Home() {
             {user ? (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center border-2 border-purple-400">
+                  <div
+                    role="button"
+                    onClick={() => navigate('/profile')}
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center border-2 border-purple-400 cursor-pointer"
+                    title="View profile"
+                  >
                     <span className="text-white font-bold text-sm">{((user.name || user.firstName || user.email || 'U').charAt(0)).toUpperCase()}</span>
                   </div>
-                  <span className="text-gray-300"><span className="text-purple-400 font-semibold">{user.name || user.firstName || user.email}</span></span>
                 </div>
                 <button
                   onClick={handleLogout}
