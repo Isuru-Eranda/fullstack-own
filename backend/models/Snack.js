@@ -27,8 +27,9 @@ const snackSchema = new mongoose.Schema(
             required: true,
         },
         ProductImage: {
-            type: String,
-            required: true,
+            type: [String],
+            default: [],
+            
         },
         ProductDescription: {
             type: String,
