@@ -1,13 +1,8 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "../hooks/useNavigate";
+import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../utils/api";
 import BackButton from "../components/BackButton";
 
 export default function ShowtimeManagement() {
-  const { user } = useContext(AuthContext);
-  // eslint-disable-next-line
-const navigate = useNavigate();
   const [showtimes, setShowtimes] = useState([]);
   const [movies, setMovies] = useState([]);
   const [halls, setHalls] = useState([]);
@@ -26,13 +21,6 @@ const navigate = useNavigate();
     price: 10.0,
   });
 
-  // TEMPORARY: Disable admin check for testing
-  // useEffect(() => {
-  //   if (user && !user.isAdmin) {
-  //     navigate("/");
-  //   }
-  // }, [user, navigate]);
-
   // Fetch data
   useEffect(() => {
     fetchData();
@@ -44,53 +32,49 @@ const navigate = useNavigate();
       setError("");
 
       // Fetch showtimes
-      const showtimesRes = await fetch(`${API_BASE_URL}/showtimes`, {
-        credentials: "include",
-      });
-
-      if (!showtimesRes.ok) {
-        throw new Error(`API Error: ${showtimesRes.status}`);
-      }
-
+      const showtimesRes = await fetch(`${API_BASE_URL}/showtimes`);
       const showtimesData = await showtimesRes.json();
 
-      // TEMPORARY: Use mock data since movies/halls endpoints don't exist yet
-      const mockMovies = [
-        { _id: "movie1", title: "Avatar: The Way of Water", duration: 192 },
-        { _id: "movie2", title: "Spider-Man: No Way Home", duration: 148 },
-        { _id: "movie3", title: "Top Gun: Maverick", duration: 130 },
-        { _id: "movie4", title: "The Batman", duration: 176 },
-      ];
-
-      const mockHalls = [
-        { _id: "hall1", name: "Screen 1 (IMAX)", capacity: 250 },
-        { _id: "hall2", name: "Screen 2 (Dolby Atmos)", capacity: 180 },
-        { _id: "hall3", name: "Screen 3 (Standard)", capacity: 150 },
-        { _id: "hall4", name: "Screen 4 (VIP)", capacity: 50 },
-      ];
-
-      if (showtimesData.success) {
-        setShowtimes(showtimesData.data);
-      } else {
-        setShowtimes([]);
+      // Try to fetch movies (Member 2's endpoint)
+      let moviesData = { success: false, data: [] };
+      try {
+        const moviesRes = await fetch(`${API_BASE_URL}/movies`);
+        moviesData = await moviesRes.json();
+      } catch (moviesErr) {
+        console.log("Movies endpoint not ready yet:", moviesErr.message);
       }
 
-      setMovies(mockMovies);
-      setHalls(mockHalls);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setError(`Failed to load data: ${error.message}`);
+      // Try to fetch halls (Member 3's endpoint)
+      let hallsData = { success: false, data: [] };
+      try {
+        const hallsRes = await fetch(`${API_BASE_URL}/halls`);
+        hallsData = await hallsRes.json();
+      } catch (hallsErr) {
+        console.log("Halls endpoint not ready yet:", hallsErr.message);
+      }
 
-      // Set mock data on error too
-      setMovies([
-        { _id: "movie1", title: "Test Movie 1", duration: 120 },
-        { _id: "movie2", title: "Test Movie 2", duration: 90 },
-      ]);
+      // Set data
+      if (showtimesData.success) setShowtimes(showtimesData.data);
+      if (moviesData.success) setMovies(moviesData.data || []);
+      if (hallsData.success) setHalls(hallsData.data || []);
 
-      setHalls([
-        { _id: "hall1", name: "Test Hall 1", capacity: 100 },
-        { _id: "hall2", name: "Test Hall 2", capacity: 150 },
-      ]);
+      // If endpoints not ready, use mock data temporarily
+      if (!moviesData.success || moviesData.data.length === 0) {
+        setMovies([
+          { _id: "movie1", title: "Avatar: The Way of Water", duration: 192 },
+          { _id: "movie2", title: "Spider-Man: No Way Home", duration: 148 },
+        ]);
+      }
+
+      if (!hallsData.success || hallsData.data.length === 0) {
+        setHalls([
+          { _id: "hall1", name: "Screen 1 (IMAX)", capacity: 250 },
+          { _id: "hall2", name: "Screen 2 (Dolby Atmos)", capacity: 180 },
+        ]);
+      }
+    } catch (fetchError) {
+      console.error("Error fetching data:", fetchError);
+      setError(`Failed to load data: ${fetchError.message}`);
     } finally {
       setLoading(false);
     }
@@ -120,7 +104,6 @@ const navigate = useNavigate();
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify(formData),
       });
 
@@ -133,8 +116,8 @@ const navigate = useNavigate();
       } else {
         setError(data.message || "Error occurred");
       }
-    } catch (error) {
-      console.error("Error saving showtime:", error);
+    } catch (submitError) {
+      console.error("Error saving showtime:", submitError);
       setError("Failed to save showtime. Please try again.");
     }
   };
@@ -158,10 +141,10 @@ const navigate = useNavigate();
     setFormData({
       movieId: showtime.movieId || showtime.movieId,
       hallId: showtime.hallId || showtime.hallId,
-      date: new Date(showtime.date).toISOString().split("T")[0],
-      startTime: new Date(showtime.startTime).toTimeString().slice(0, 5),
-      endTime: new Date(showtime.endTime).toTimeString().slice(0, 5),
-      price: showtime.price,
+      date: showtime.date ? new Date(showtime.date).toISOString().split("T")[0] : "",
+      startTime: showtime.startTime ? new Date(showtime.startTime).toTimeString().slice(0, 5) : "",
+      endTime: showtime.endTime ? new Date(showtime.endTime).toTimeString().slice(0, 5) : "",
+      price: showtime.price || 10.0,
     });
     setShowForm(true);
   };
@@ -173,7 +156,6 @@ const navigate = useNavigate();
     try {
       const response = await fetch(`${API_BASE_URL}/showtimes/${id}`, {
         method: "DELETE",
-        credentials: "include",
       });
 
       const data = await response.json();
@@ -184,8 +166,8 @@ const navigate = useNavigate();
       } else {
         setError(data.message || "Failed to delete showtime");
       }
-    } catch (error) {
-      console.error("Error deleting showtime:", error);
+    } catch (deleteError) {
+      console.error("Error deleting showtime:", deleteError);
       setError("Failed to delete showtime");
     }
   };
@@ -201,14 +183,15 @@ const navigate = useNavigate();
     });
   };
 
-  // TEMPORARY: Allow all users to access for testing
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
-  //       <div>Please login to access this page.</div>
-  //     </div>
-  //   );
-  // }
+  const getMovieTitle = (movieId) => {
+    const movie = movies.find(m => m._id === movieId);
+    return movie ? movie.title : `Movie ID: ${movieId}`;
+  };
+
+  const getHallName = (hallId) => {
+    const hall = halls.find(h => h._id === hallId);
+    return hall ? hall.name : `Hall ID: ${hallId}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-4 md:p-8">
@@ -237,6 +220,13 @@ const navigate = useNavigate();
           </div>
         )}
 
+        {/* Info Message if endpoints not ready */}
+        {(movies.length === 2 && movies[0]._id === "movie1") && (
+          <div className="mb-6 p-4 bg-blue-600/20 border border-blue-500/50 text-blue-300 rounded-lg">
+            ⓘ Using mock data for movies/halls. Will switch to real data when Members 2 & 3 complete their endpoints.
+          </div>
+        )}
+
         {/* Create/Edit Form */}
         {showForm && (
           <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30 mb-8">
@@ -261,7 +251,7 @@ const navigate = useNavigate();
                   <option value="">Select a movie</option>
                   {movies.map((movie) => (
                     <option key={movie._id} value={movie._id}>
-                      {movie.title} ({movie.duration} min)
+                      {movie.title} {movie.duration ? `(${movie.duration} min)` : ""}
                     </option>
                   ))}
                 </select>
@@ -280,7 +270,7 @@ const navigate = useNavigate();
                   <option value="">Select a hall</option>
                   {halls.map((hall) => (
                     <option key={hall._id} value={hall._id}>
-                      {hall.name} ({hall.capacity} seats)
+                      {hall.name} {hall.capacity ? `(${hall.capacity} seats)` : ""}
                     </option>
                   ))}
                 </select>
@@ -375,9 +365,7 @@ const navigate = useNavigate();
           <div className="text-center py-8 text-gray-400">
             <div className="text-4xl mb-4">🎬</div>
             <p className="text-xl mb-2">No showtimes found</p>
-            <p className="mb-4">
-              Click "Add New Showtime" to create your first showtime!
-            </p>
+            <p className="mb-4">Click "Add New Showtime" to create your first showtime!</p>
             <button
               onClick={() => setShowForm(true)}
               className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
@@ -395,13 +383,10 @@ const navigate = useNavigate();
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-white">
-                      {movies.find((m) => m._id === showtime.movieId)?.title ||
-                        `Movie: ${showtime.movieId}`}
+                      {getMovieTitle(showtime.movieId)}
                     </h3>
                     <p className="text-gray-400 text-sm">
-                      {halls.find((h) => h._id === showtime.hallId)?.name ||
-                        `Hall: ${showtime.hallId}`}{" "}
-                      • {showtime.availableSeats} seats available
+                      {getHallName(showtime.hallId)} • {showtime.availableSeats} seats available
                     </p>
                   </div>
                   <span className="px-3 py-1 bg-purple-600 rounded-full text-sm font-medium">
@@ -417,11 +402,14 @@ const navigate = useNavigate();
                   <p className="flex items-center gap-2">
                     <span className="text-gray-400">⏰</span>
                     <span>
-                      {formatDateTime(showtime.startTime).split(",")[1]} -
-                      {new Date(showtime.endTime).toLocaleTimeString([], {
+                      {showtime.startTime ? new Date(showtime.startTime).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
-                      })}
+                      }) : "N/A"} - 
+                      {showtime.endTime ? new Date(showtime.endTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }) : "N/A"}
                     </span>
                   </p>
                   <p className="text-sm text-gray-400">
@@ -454,16 +442,6 @@ const navigate = useNavigate();
             ))}
           </div>
         )}
-
-        {/* Debug Info (Remove in production) */}
-        <div className="mt-8 p-4 bg-gray-800/30 rounded-lg text-sm text-gray-400">
-          <p className="font-medium mb-2">Debug Info:</p>
-          <p>• Backend URL: {API_BASE_URL}</p>
-          <p>• Showtimes loaded: {showtimes.length}</p>
-          <p>• Movies loaded: {movies.length} (mock data)</p>
-          <p>• Halls loaded: {halls.length} (mock data)</p>
-          <p>• User: {user ? "Logged in" : "Not logged in"}</p>
-        </div>
       </div>
     </div>
   );

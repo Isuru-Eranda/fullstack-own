@@ -41,7 +41,7 @@ exports.createShowtime = async (req, res) => {
       });
     }
 
-    // Create showtime
+    // Create showtime - will auto-populate when Movie/Hall models exist
     const showtime = await Showtime.create({
       movieId,
       hallId,
@@ -49,7 +49,7 @@ exports.createShowtime = async (req, res) => {
       endTime: end,
       date: showDate,
       price: price || 10.0,
-      availableSeats: 100, // Default until Hall model exists
+      availableSeats: 100, // Will use hall.capacity when Hall model exists
     });
 
     res.status(201).json({
@@ -59,7 +59,7 @@ exports.createShowtime = async (req, res) => {
     });
   } catch (error) {
     console.error("Create showtime error:", error);
-
+    
     // Handle duplicate key error (double booking)
     if (error.code === 11000) {
       return res.status(400).json({
@@ -67,7 +67,7 @@ exports.createShowtime = async (req, res) => {
         message: "Double booking detected for this hall and time",
       });
     }
-
+    
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -95,10 +95,9 @@ exports.getShowtimes = async (req, res) => {
       filter.date = { $gte: startDate, $lte: endDate };
     }
 
-    const showtimes = await Showtime.find(filter).sort({
-      date: 1,
-      startTime: 1,
-    });
+    // Will auto-populate when Movie/Hall models exist
+    const showtimes = await Showtime.find(filter)
+      .sort({ date: 1, startTime: 1 });
 
     res.status(200).json({
       success: true,
@@ -241,7 +240,8 @@ exports.getShowtimesByMovie = async (req, res) => {
       movieId: req.params.movieId,
       isActive: true,
       date: { $gte: new Date() }, // Only future showtimes
-    }).sort({ date: 1, startTime: 1 });
+    })
+      .sort({ date: 1, startTime: 1 });
 
     res.status(200).json({
       success: true,

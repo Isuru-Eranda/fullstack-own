@@ -3,11 +3,13 @@ const mongoose = require("mongoose");
 const showtimeSchema = new mongoose.Schema(
   {
     movieId: {
-      type: String, // TEMPORARY: Change to ObjectId later
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Movie",  // Ready for Member 2's model
       required: true,
     },
     hallId: {
-      type: String, // TEMPORARY: Change to ObjectId later
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hall",   // Ready for Member 3's model
       required: true,
     },
     startTime: {
