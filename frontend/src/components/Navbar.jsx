@@ -32,12 +32,6 @@ export default function Navbar() {
               Movies
             </button>
             <button
-              onClick={() => navigate('/cinemas')}
-              className="text-text-primary hover:text-purple-400 font-medium transition uppercase tracking-wide text-sm"
-            >
-              Cinemas
-            </button>
-            <button
               onClick={() => navigate('/concessions')}
               className="text-text-primary hover:text-purple-400 font-medium transition uppercase tracking-wide text-sm"
             >

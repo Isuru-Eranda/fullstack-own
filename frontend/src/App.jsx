@@ -14,56 +14,6 @@ import HallForm from './pages/HallForm';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
-  const [currentPage, setCurrentPage] = useState("home");
-
-  useEffect(() => {
-    // Simple routing based on URL
-    const handleRouteChange = () => {
-      const path = window.location.pathname;
-      if (path === '/login') setCurrentPage('login');
-      else if (path === '/register') setCurrentPage('register');
-      else if (path === '/profile') setCurrentPage('profile');
-      else if (path === '/movies') setCurrentPage('movies');
-      else if (path.startsWith('/movies/') && path.includes('/showtimes')) {
-        // Handle /movies/:id/showtimes routes
-        setCurrentPage('movie-showtimes');
-      }
-      else if (path.startsWith('/movies/') && path.split('/').length >= 3) {
-        // Handle /movies/:id routes
-        setCurrentPage('movie-details');
-      }
-      else if (path === '/cinemas') setCurrentPage('cinemas');
-      else if (path === '/concessions') setCurrentPage('concessions');
-      else setCurrentPage('home');
-    };
-
-    handleRouteChange();
-    window.addEventListener("popstate", handleRouteChange);
-
-    return () => window.removeEventListener("popstate", handleRouteChange);
-  }, []);
-
-  // Override history for navigation
-  useEffect(() => {
-    const originalPushState = window.history.pushState;
-    window.history.pushState = function (...args) {
-      originalPushState.apply(window.history, args);
-      const newPath = args[2];
-      if (newPath === '/login') setCurrentPage('login');
-      else if (newPath === '/register') setCurrentPage('register');
-      else if (newPath === '/profile') setCurrentPage('profile');
-      else if (newPath === '/movies') setCurrentPage('movies');
-      else if (newPath.startsWith('/movies/') && newPath.includes('/showtimes')) {
-        setCurrentPage('movie-showtimes');
-      }
-      else if (newPath.startsWith('/movies/') && newPath.split('/').length >= 3) {
-        setCurrentPage('movie-details');
-      }
-      else if (newPath === '/cinemas') setCurrentPage('cinemas');
-      else if (newPath === '/concessions') setCurrentPage('concessions');
-      else setCurrentPage('home');
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -73,19 +23,19 @@ function AppContent() {
     );
   }
 
-  // Let React Router decide which page to show
+  // Use React Router to decide which page to show
   return (
-    <>
-      {currentPage === 'login' && <Login />}
-      {currentPage === 'register' && <Register />}
-      {currentPage === 'movies' && <Movies />}
-      {currentPage === 'movie-details' && <MovieDetails />}
-      {currentPage === 'movie-showtimes' && <MovieShowtimes />}
-      {currentPage === 'profile' && <Profile />}
-      {currentPage === 'cinemas' && <div className="min-h-screen bg-background-900"><div className="text-center py-20 text-text-primary">Cinemas page coming soon...</div></div>}
-      {currentPage === 'concessions' && <div className="min-h-screen bg-background-900"><div className="text-center py-20 text-text-primary">Concessions page coming soon...</div></div>}
-      {currentPage === 'home' && <Home />}
-    </>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/movies" element={<Movies />} />
+      <Route path="/movies/:id" element={<MovieDetails />} />
+      <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
+      <Route path="/admin/halls" element={<HallsList />} />
+      <Route path="/admin/halls/:id" element={<HallForm />} />
+    </Routes>
   );
 }
 
