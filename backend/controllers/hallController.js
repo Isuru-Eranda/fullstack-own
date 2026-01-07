@@ -27,27 +27,21 @@ exports.createHall = async (req, res) => {
   try {
     const { name, description, status, layout } = req.body;
 
-    if (!layout || !layout.rows || !layout.cols) {
-      return res
-        .status(400)
-        .json({ message: 'Layout with rows and cols is required' });
+    // Validate required fields
+    if (!name || !layout || !layout.rows || !layout.cols) {
+      return res.status(400).json({ 
+        message: 'Name, rows, and columns are required' 
+      });
     }
 
     const rows = Number(layout.rows);
     const cols = Number(layout.cols);
+    const partitions = layout.partitions || [];
 
-    if (rows <= 0 || cols <= 0) {
-      return res
-        .status(400)
-        .json({ message: 'Rows and columns must be positive numbers' });
-    }
+    // Generate seats using helper function
+    const seats = generateSeatGrid(rows, cols);
 
-    // If no seats provided, auto-generate grid
-    let seats = layout.seats;
-    if (!Array.isArray(seats) || seats.length === 0) {
-      seats = generateSeatGrid(rows, cols);
-    }
-
+    // Create hall with partitions
     const hall = await Hall.create({
       name,
       description,
@@ -56,29 +50,31 @@ exports.createHall = async (req, res) => {
         rows,
         cols,
         seats,
+        partitions,
       },
     });
 
     res.status(201).json(hall);
   } catch (error) {
     console.error('Create hall error:', error);
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'Hall name must be unique' });
-    }
-    res.status(500).json({ message: 'Failed to create hall' });
+    res.status(500).json({ 
+      message: error.message || 'Failed to create hall' 
+    });
   }
 };
 
 // @desc    Get all halls
 // @route   GET /api/halls
-// @access  Public (or restrict to admin if you want)
+// @access  Public
 exports.getAllHalls = async (req, res) => {
   try {
-    const halls = await Hall.find().sort({ createdAt: 1 });
+    const halls = await Hall.find().sort({ createdAt: -1 });
     res.json(halls);
   } catch (error) {
     console.error('Get halls error:', error);
-    res.status(500).json({ message: 'Failed to fetch halls' });
+    res.status(500).json({ 
+      message: error.message || 'Failed to fetch halls' 
+    });
   }
 };
 
@@ -94,11 +90,13 @@ exports.getHallById = async (req, res) => {
     res.json(hall);
   } catch (error) {
     console.error('Get hall error:', error);
-    res.status(500).json({ message: 'Failed to fetch hall' });
+    res.status(500).json({ 
+      message: error.message || 'Failed to fetch hall' 
+    });
   }
 };
 
-// @desc    Update hall (incl. status or layout)
+// @desc    Update hall
 // @route   PUT /api/halls/:id
 // @access  Private/Admin
 exports.updateHall = async (req, res) => {
@@ -110,34 +108,34 @@ exports.updateHall = async (req, res) => {
       return res.status(404).json({ message: 'Hall not found' });
     }
 
-    if (name !== undefined) hall.name = name;
+    // Update basic fields
+    if (name) hall.name = name;
     if (description !== undefined) hall.description = description;
-    if (status !== undefined) hall.status = status;
+    if (status) hall.status = status;
 
+    // Update layout if provided
     if (layout) {
-      // Allow updating rows/cols and/or full seat map
-      if (layout.rows !== undefined) hall.layout.rows = Number(layout.rows);
-      if (layout.cols !== undefined) hall.layout.cols = Number(layout.cols);
+      const rows = Number(layout.rows);
+      const cols = Number(layout.cols);
+      const partitions = layout.partitions || [];
 
-      if (Array.isArray(layout.seats) && layout.seats.length > 0) {
-        hall.layout.seats = layout.seats;
-      } else if (
-        layout.rows !== undefined ||
-        layout.cols !== undefined
-      ) {
-        // If grid size changed but no seats provided -> regenerate
-        hall.layout.seats = generateSeatGrid(
-          hall.layout.rows,
-          hall.layout.cols
-        );
+      // Regenerate seats if dimensions changed
+      if (rows !== hall.layout.rows || cols !== hall.layout.cols) {
+        hall.layout.seats = generateSeatGrid(rows, cols);
       }
+
+      hall.layout.rows = rows;
+      hall.layout.cols = cols;
+      hall.layout.partitions = partitions;
     }
 
     await hall.save();
     res.json(hall);
   } catch (error) {
     console.error('Update hall error:', error);
-    res.status(500).json({ message: 'Failed to update hall' });
+    res.status(500).json({ 
+      message: error.message || 'Failed to update hall' 
+    });
   }
 };
 
@@ -146,15 +144,15 @@ exports.updateHall = async (req, res) => {
 // @access  Private/Admin
 exports.deleteHall = async (req, res) => {
   try {
-    const hall = await Hall.findById(req.params.id);
+    const hall = await Hall.findByIdAndDelete(req.params.id);
     if (!hall) {
       return res.status(404).json({ message: 'Hall not found' });
     }
-
-    await hall.deleteOne();
-    res.json({ message: 'Hall deleted' });
+    res.json({ message: 'Hall deleted successfully' });
   } catch (error) {
     console.error('Delete hall error:', error);
-    res.status(500).json({ message: 'Failed to delete hall' });
+    res.status(500).json({ 
+      message: error.message || 'Failed to delete hall' 
+    });
   }
 };

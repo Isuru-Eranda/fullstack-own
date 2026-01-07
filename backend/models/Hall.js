@@ -27,11 +27,6 @@ const hallSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    cinema: {
-      type: String,
-      required: [true, 'Cinema location is required'],
-      trim: true,
-    },
     status: {
       type: String,
       enum: ['active', 'maintenance', 'inactive', 'closed'],
@@ -52,6 +47,10 @@ const hallSchema = new mongoose.Schema(
       },
       seats: {
         type: [seatSchema],
+        default: [],
+      },
+      partitions: {
+        type: [Number], // Array of column indices where aisles exist
         default: [],
       },
     },
