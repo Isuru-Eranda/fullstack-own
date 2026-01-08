@@ -28,7 +28,7 @@ describe("Showtime Model", () => {
     // Create test movie and hall
     const movie = await Movie.create({
       title: "Test Movie",
-      description: "Test Description",
+      description: "This is a test movie description used in unit tests. It is sufficiently long.",
       duration: 120,
       genre: ["Action"],
       language: "English",
@@ -67,7 +67,7 @@ describe("Showtime Model", () => {
   test("should prevent duplicate showtimes in same hall at same time", async () => {
     const movie = await Movie.create({
       title: "Test Movie",
-      description: "Test Description",
+      description: "This is a test movie description used in unit tests. It is sufficiently long.",
       duration: 120,
       genre: ["Action"],
       language: "English",
@@ -101,7 +101,7 @@ describe("Showtime Model", () => {
   test("should detect overlapping showtimes", async () => {
     const movie = await Movie.create({
       title: "Test Movie",
-      description: "Test Description",
+      description: "This is a test movie description used in unit tests. It is sufficiently long.",
       duration: 120,
       genre: ["Action"],
       language: "English",
@@ -139,7 +139,7 @@ describe("Showtime Model", () => {
   test("should calculate end time from movie duration", async () => {
     const movie = await Movie.create({
       title: "Test Movie",
-      description: "Test Description",
+      description: "This is a test movie description used in unit tests. It is sufficiently long.",
       duration: 150, // 2.5 hours
       genre: ["Action"],
       language: "English",
