@@ -17,6 +17,7 @@ import ShowtimeManagement from './pages/admin/ShowtimeManagement';
 import UserManagement from './pages/admin/UserManagement';
 import Concession from './pages/concession';
 import ConcessionManagement from './pages/admin/concessionmanagement';
+import NotFound from './pages/notfound';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
@@ -48,6 +49,7 @@ function AppContent() {
       <Route path="/user-management" element={<UserManagement />} />
       <Route path="/concession-management" element={<ConcessionManagement />} />
       <Route path="/concessions" element={<Concession />} />
+      <Route path="*" element={<NotFound />} />
       
 
     </Routes>
