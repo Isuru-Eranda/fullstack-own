@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Movies from './pages/Movies';
 import MovieDetails from './pages/MovieDetails';
 import MovieShowtimes from './pages/MovieShowtimes';
+import MovieForm from './pages/MovieForm';
 import HallsList from './pages/admin/HallsList';
 import HallForm from './pages/admin/HallForm';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -34,7 +35,9 @@ function AppContent() {
       <Route path="/register" element={<Register />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/movies" element={<Movies />} />
+      <Route path="/movies/new" element={<MovieForm />} />
       <Route path="/movies/:id" element={<MovieDetails />} />
+      <Route path="/movies/:id/edit" element={<MovieForm />} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/halls" element={<HallsList />} />
