@@ -5,18 +5,34 @@ const Hall = require("../models/Hall");
  * CREATE – Initialize seats for a showtime
  */
 exports.initializeSeats = async (req, res) => {
-  const { showId } = req.body;
+  try {
+    const { showId } = req.body;
 
-  const show = await Show.findById(showId);
-  const hall = await Hall.findById(show.hallId);
+    if (!showId) {
+      return res.status(400).json({ message: "showId is required" });
+    }
 
-  show.seats = hall.layout.seats.map(seat => ({
-    seatLabel: seat.label,
-    status: "AVAILABLE",
-  }));
+    const show = await Show.findById(showId);
+    if (!show) {
+      return res.status(404).json({ message: "Show not found" });
+    }
 
-  await show.save();
-  res.json({ message: "Seats initialized" });
+    const hall = await Hall.findById(show.hallId);
+    if (!hall) {
+      return res.status(404).json({ message: "Hall not found" });
+    }
+
+    show.seats = hall.layout.seats.map(seat => ({
+      seatLabel: seat.label,
+      status: "AVAILABLE",
+    }));
+
+    await show.save();
+    res.json({ message: "Seats initialized", totalSeats: show.seats.length });
+  } catch (error) {
+    console.error("Error initializing seats:", error);
+    res.status(500).json({ message: "Error initializing seats", error: error.message });
+  }
 };
 
 /**

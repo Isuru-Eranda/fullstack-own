@@ -1,0 +1,109 @@
+{
+  "description": "Test data for initializeSeats endpoint",
+  "endpoint": "POST /api/seats/initialize",
+  "notes": [
+    "First, create a Hall with seat layout",
+    "Then, create a Show linked to that Hall",
+    "Finally, call initializeSeats with the Show ID"
+  ],
+  
+  "step1_createHall": {
+    "method": "POST",
+    "url": "/api/halls",
+    "body": {
+      "name": "Hall A",
+      "description": "Premium theater with 50 seats",
+      "status": "active",
+      "layout": {
+        "rows": 5,
+        "cols": 10,
+        "seats": [
+          { "row": 1, "col": 1, "label": "A1", "type": "regular", "isActive": true },
+          { "row": 1, "col": 2, "label": "A2", "type": "regular", "isActive": true },
+          { "row": 1, "col": 3, "label": "A3", "type": "regular", "isActive": true },
+          { "row": 1, "col": 4, "label": "A4", "type": "regular", "isActive": true },
+          { "row": 1, "col": 5, "label": "A5", "type": "vip", "isActive": true },
+          { "row": 1, "col": 6, "label": "A6", "type": "vip", "isActive": true },
+          { "row": 1, "col": 7, "label": "A7", "type": "regular", "isActive": true },
+          { "row": 1, "col": 8, "label": "A8", "type": "regular", "isActive": true },
+          { "row": 1, "col": 9, "label": "A9", "type": "regular", "isActive": true },
+          { "row": 1, "col": 10, "label": "A10", "type": "regular", "isActive": true },
+          { "row": 2, "col": 1, "label": "B1", "type": "regular", "isActive": true },
+          { "row": 2, "col": 2, "label": "B2", "type": "regular", "isActive": true },
+          { "row": 2, "col": 3, "label": "B3", "type": "regular", "isActive": true },
+          { "row": 2, "col": 4, "label": "B4", "type": "regular", "isActive": true },
+          { "row": 2, "col": 5, "label": "B5", "type": "vip", "isActive": true },
+          { "row": 2, "col": 6, "label": "B6", "type": "vip", "isActive": true },
+          { "row": 2, "col": 7, "label": "B7", "type": "regular", "isActive": true },
+          { "row": 2, "col": 8, "label": "B8", "type": "regular", "isActive": true },
+          { "row": 2, "col": 9, "label": "B9", "type": "regular", "isActive": true },
+          { "row": 2, "col": 10, "label": "B10", "type": "regular", "isActive": true }
+        ],
+        "partitions": [5]
+      },
+      "features": ["Dolby Atmos", "Recliner Seats"]
+    },
+    "expectedResponse": {
+      "_id": "SAVE_THIS_HALL_ID",
+      "name": "Hall A",
+      "totalSeats": 20
+    }
+  },
+
+  "step2_createShow": {
+    "method": "POST",
+    "url": "/api/shows",
+    "body": {
+      "hallId": "REPLACE_WITH_HALL_ID_FROM_STEP1",
+      "showTime": "2026-01-10T19:00:00.000Z"
+    },
+    "expectedResponse": {
+      "_id": "SAVE_THIS_SHOW_ID",
+      "hallId": "...",
+      "showTime": "2026-01-10T19:00:00.000Z",
+      "seats": []
+    }
+  },
+
+  "step3_initializeSeats": {
+    "method": "POST",
+    "url": "/api/seats/initialize",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "showId": "REPLACE_WITH_SHOW_ID_FROM_STEP2"
+    },
+    "expectedResponse": {
+      "message": "Seats initialized"
+    }
+  },
+
+  "step4_verifySeats": {
+    "method": "GET",
+    "url": "/api/seats/{showId}",
+    "description": "Check if seats were properly initialized from hall layout",
+    "expectedResponse": [
+      {
+        "seatLabel": "A1",
+        "status": "AVAILABLE"
+      },
+      {
+        "seatLabel": "A2",
+        "status": "AVAILABLE"
+      }
+    ]
+  },
+
+  "quickTest_withExistingIds": {
+    "description": "If you already have a Show ID, use this payload directly",
+    "method": "POST",
+    "url": "http://localhost:5008/api/seats/initialize",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "showId": "YOUR_SHOW_ID_HERE"
+    }
+  }
+}

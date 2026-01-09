@@ -52,6 +52,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/halls', hallRoutes);
 app.use('/api/seats', seatRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/snacks', snackRoutes);
 
 // Cleanup expired seat locks every minute
 setInterval(async () => {
