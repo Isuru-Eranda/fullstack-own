@@ -1,8 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 const connectDB = require("./config/db");
+const seatSocket = require("./sockets/seatSocket");
 
 // Import routes (each only once)
 const authRoutes = require("./routes/auth");
@@ -18,23 +21,6 @@ const Show = require("./models/Show");
 // Connect to MongoDB
 connectDB();
 
-// Cleanup expired seat locks every minute
-setInterval(async () => {
-  const expiry = new Date(Date.now() - 5 * 60 * 1000);
-
-  await Show.updateMany(
-    {},
-    {
-      $pull: {
-        bookedSeats: {
-          status: "LOCKED",
-          lockedAt: { $lt: expiry }
-        }
-      }
-    }
-  );
-}, 60000);
-
 const app = express();
 
 // Middleware
@@ -48,6 +34,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Parse cookies
 
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
+
+// Make io available across the app
+app.set("io", io);
+seatSocket(io);
+
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
 
@@ -56,6 +52,29 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/halls', hallRoutes);
 app.use('/api/seats', seatRoutes);
+
+// Cleanup expired seat locks every minute
+setInterval(async () => {
+  const expiry = new Date(Date.now() - 5 * 60 * 1000);
+
+  await Show.updateMany(
+    {},
+    {
+      $set: {
+        "seats.$[seat].status": "AVAILABLE",
+        "seats.$[seat].userId": null,
+      },
+    },
+    {
+      arrayFilters: [
+        {
+          "seat.status": "LOCKED",
+          "seat.lockedAt": { $lt: expiry },
+        },
+      ],
+    }
+  );
+}, 60000);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -69,7 +88,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5008;
-
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

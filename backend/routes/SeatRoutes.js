@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 const {
-  getSeats,
-  lockSeats,
-  confirmSeats
+  initializeSeats,
+  getSeatMap,
+  lockSeat,
+  confirmSeat
 } = require("../controllers/SeatController");
 
-router.get("/:showId", getSeats);
-router.post("/lock", auth, lockSeats);
-router.post("/confirm", auth, confirmSeats);
+router.post("/initialize", initializeSeats); // CREATE
+router.get("/:showId", getSeatMap);           // READ
+router.post("/lock", auth, lockSeat);         // UPDATE
+router.post("/confirm", auth, confirmSeat);   // UPDATE
 
 module.exports = router;
