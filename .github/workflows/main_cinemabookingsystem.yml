@@ -72,5 +72,5 @@ jobs:
         with:
           app-name: 'cinemabookingsystem'
           slot-name: 'Production'
-          package: ./backend
+          package: ./node-app
           
