@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const path = require('path');
 require("dotenv").config();
 const connectDB = require("./config/db");
 
@@ -17,9 +18,16 @@ connectDB();
 const app = express();
 
 // Middleware
+// Configure CORS origins via environment variable `CORS_ORIGINS`
+// Example: CORS_ORIGINS="https://your-site.netlify.app,https://admin.example.com"
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: allowedOrigins,
     credentials: true, // Allow cookies
   })
 );
@@ -35,9 +43,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/halls',hallRoutes);
 
-// Health check
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ message: "Server is running" });
+// Root route (simple API landing) and health check
+app.get('/', (req, res) => {
+  res.status(200).json({ message: 'CinemaBookingSystem API', health: '/api/health' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'Server is running' });
 });
 
 // Error handling middleware
