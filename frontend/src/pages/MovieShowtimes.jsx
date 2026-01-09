@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../utils/api";
 import Navbar from "../components/Navbar";
 import BackButton from "../components/BackButton";
+import LoadingLogo from "../components/LoadingLogo";
 
 export default function MovieShowtimes() {
   // Get movie ID from URL path (e.g., /movies/123/showtimes)
@@ -77,10 +78,7 @@ export default function MovieShowtimes() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-text-secondary">Loading showtimes...</p>
-        </div>
+        <LoadingLogo size={80} text="Loading showtimes..." />
       </div>
     );
   }

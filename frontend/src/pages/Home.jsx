@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import HeroCarousel from '../components/HeroCarousel';
 import QuickBooking from '../components/QuickBooking';
 import MovieCard from '../components/MovieCard';
+import LoadingLogo from '../components/LoadingLogo';
 import { fetchMovies } from '../services/movieService';
 import { getHalls } from '../services/hallService';
 
@@ -110,8 +111,7 @@ export default function Home() {
 
         {loading ? (
           <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-surface-400 border-t-secondary-300 mb-4"></div>
-            <p className="text-text-secondary uppercase tracking-widest font-bold">Loading movies...</p>
+            <LoadingLogo size={80} text="Loading movies..." />
           </div>
         ) : nowShowingMovies.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

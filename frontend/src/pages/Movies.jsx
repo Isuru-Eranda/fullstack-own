@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import QuickBooking from '../components/QuickBooking';
 import MovieCard from '../components/MovieCard';
 import Modal from '../components/Modal';
+import LoadingLogo from '../components/LoadingLogo';
 import { fetchMovies, deleteMovie } from '../services/movieService';
 
 /**
@@ -129,8 +130,7 @@ export default function Movies() {
         {/* Loading State */}
         {loading && (
           <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-surface-400 border-t-secondary-300 mb-4"></div>
-            <p className="text-text-secondary uppercase tracking-widest font-bold">Loading movies...</p>
+            <LoadingLogo size={80} text="Loading movies..." />
           </div>
         )}
 

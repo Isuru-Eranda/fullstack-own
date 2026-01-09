@@ -36,9 +36,20 @@ jobs:
       - name: npm install, build, and test (backend)
         working-directory: ./backend
         run: |
-          npm install --no-audit --no-fund
+          # Install full deps for tests and build
+          npm ci --no-audit --no-fund
           npm run build --if-present
           npm run test --if-present
+          # Create a production-only node_modules tarball for deployment
+          # (install production deps in a temporary folder and tar them)
+          TMP_DEPLOY_DIR=$(mktemp -d)
+          cp package.json package-lock.json "$TMP_DEPLOY_DIR/"
+          pushd "$TMP_DEPLOY_DIR"
+          npm ci --production --no-audit --no-fund
+          tar -czf node_modules.tar.gz node_modules
+          popd
+          mv "$TMP_DEPLOY_DIR/node_modules.tar.gz" ./node_modules.tar.gz
+          rm -rf "$TMP_DEPLOY_DIR"
 
       - name: Upload backend artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -58,6 +69,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: ./backend
       
       - name: Login to Azure
         uses: azure/login@v2

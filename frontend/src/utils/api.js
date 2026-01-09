@@ -1,4 +1,11 @@
 // API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5008/api';
+const rawBase = (import.meta.env.VITE_API_URL || 'http://localhost:5008/api').toString().trim();
+export const API_BASE_URL = rawBase.replace(/\/+$/, ''); // remove trailing slashes
 
-export { API_BASE_URL };
+// Safely build endpoint URLs: joins base and endpoint without producing double slashes
+export function buildUrl(endpoint) {
+	const e = endpoint.toString().replace(/^\/+/, '');
+	return `${API_BASE_URL}/${e}`;
+}
+
+export default API_BASE_URL;

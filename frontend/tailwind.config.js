@@ -45,7 +45,16 @@ export default {
           warning: "#F5A623",
           info: "#2D9CDB",
         }
-      }
+      },
+      animation: {
+        'fill-left-to-right': 'fill-left-to-right 2s ease-in-out infinite',
+      },
+      keyframes: {
+        'fill-left-to-right': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
     },
   },
   plugins: [],
