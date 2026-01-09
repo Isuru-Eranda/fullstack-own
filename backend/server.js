@@ -34,6 +34,8 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/halls',hallRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/snacks', snackRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

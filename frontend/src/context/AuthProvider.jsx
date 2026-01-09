@@ -17,10 +17,15 @@ export function AuthProvider({ children }) {
         const data = await response.json();
         setUser(data.user);
       } else {
+        // Don't log 401 errors as they're expected when user is not logged in
+        if (response.status !== 401) {
+          console.error('Error fetching user:', response.status, response.statusText);
+        }
         setUser(null);
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
+      // Only log actual network errors, not authentication errors
+      console.error('Network error fetching user:', error);
       setUser(null);
     } finally {
       setLoading(false);

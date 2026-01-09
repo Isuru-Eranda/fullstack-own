@@ -1,32 +1,152 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+
+
+
+
+
 export default function AddSnacks() {
+
+
+    const [productId, setProductId] = useState('');
+    const [productName, setProductName] = useState('');
+    const [labelledPrice, setLabelledPrice] = useState('');
+    const [productPrice, setProductPrice] = useState('');
+    const [productQuantity, setProductQuantity] = useState('');
+    const [productCategory, setProductCategory] = useState('chips');
+    const [productImage, setProductImage] = useState('');
+    const [productDescription, setProductDescription] = useState('');
+    const [isAvailable, setIsAvailable] = useState('true');
+    const navigate = useNavigate();
+
+
+    function handleSubmit() {
+        // Basic validation
+        if (!productId || !productName || !productPrice || !labelledPrice || !productQuantity) {
+            toast.error('Please fill in all required fields (ID, Name, Price, Label Price, Quantity)');
+            return;
+        }
+
+        const snackData = {
+            ProductId: productId,
+            ProductName: productName,
+            labelledPrice: parseFloat(labelledPrice) || 0,
+            ProductPrice: parseFloat(productPrice) || 0,
+            ProductQuantity: parseInt(productQuantity) || 0,
+            ProductCategory: productCategory,
+            ProductImage: productImage ? [productImage] : [],
+            ProductDescription: productDescription,
+            isAvailable: isAvailable === 'true',
+        };
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Please log in to continue');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+            return;
+        }
+        
+        // Loading toast
+        const loadingToast = toast.loading('Adding snack...');
+        
+        const API_BASE_URL = import.meta.env.VITE_API_URL ;
+        
+        axios.post(`${API_BASE_URL}/snacks`, snackData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then((response) => {
+            toast.dismiss(loadingToast);
+            toast.success('Snack added successfully!');
+            navigate('/concession-management');
+
+            
+            
+            // Clear form
+            setProductId('');
+            setProductName('');
+            setLabelledPrice('');
+            setProductPrice('');
+            setProductQuantity('');
+            setProductCategory('chips');
+            setProductImage('');
+            setProductDescription('');
+            setIsAvailable('true');
+        })
+        .catch((error) => {
+            toast.dismiss(loadingToast);
+            console.error('Error adding snack:', error);
+            
+            if (error.response) {
+                if (error.response.status === 401) {
+                    toast.error('Session expired. Please log in again.');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (error.response.status === 400) {
+                    toast.error('Invalid data provided. Please check your inputs.');
+                } else {
+                    toast.error('Server error occurred. Please try again.');
+                }
+            } else {
+                toast.error('Cannot connect to server. Please check if backend is running.');
+            }
+        });
+    }
+
+
     return (
         <div className="min-h-screen bg-background-900 text-text-primary flex justify-center items-center">
             
             <div className="w-[900px]  bottom-60 bg-background-800 rounded-lg mt-20 p-6">
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack ID</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input onChange={
+                        (e) => {setProductId(e.target.value)}
+                    } value={productId}
+                    type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack Name</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input
+                     onChange={(e) => {setProductName(e.target.value)}}
+                     value={productName}
+                     type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack Label Price</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input 
+                    onChange={(e) => {setLabelledPrice(e.target.value)}}
+                    value={labelledPrice}
+                    type="number" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack price</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input
+                     onChange={(e) => {setProductPrice(e.target.value)}}
+                        value={productPrice}
+                     type="number" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Quantity</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input
+                     onChange={(e) => {setProductQuantity(e.target.value)}}
+                        value={productQuantity}
+                     type="number" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Category</label>
-                    <select className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded">
+                    <select 
+                    onChange={(e) => {setProductCategory(e.target.value)}}
+                        value={productCategory}
+                    className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded">
                         <option value="chips">Chips</option>
                         <option value="chocolate">Chocolate</option>
                         <option value="drinks">Drinks</option>
@@ -35,15 +155,24 @@ export default function AddSnacks() {
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Image</label>
-                    <input type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <input 
+                    onChange={(e) => {setProductImage(e.target.value)}}
+                    value={productImage}
+                    type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Description</label>
-                    <textarea className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
+                    <textarea 
+                    onChange={(e) => {setProductDescription(e.target.value)}}
+                    value={productDescription}
+                    className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">isavailable</label>
-                    <select className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded">
+                    <select 
+                    onChange={(e) => {setIsAvailable(e.target.value)}} 
+                    value={isAvailable}
+                    className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded">
                         <option value="true">True</option>
                         <option value="false">False</option>
                     </select>
@@ -53,15 +182,13 @@ export default function AddSnacks() {
                     <Link to="/concession-management" className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
                         Cancel
                     </Link>
-                    <Link to="/concession-management" className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded">
+                    <Link onClick={handleSubmit} className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded">
                         Add Snack
                     </Link>
                 </div>
                 
                 
-                
-
-
+            
 
             </div>
             
