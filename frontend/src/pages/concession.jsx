@@ -1,7 +1,10 @@
+import Navbar from '../components/Navbar';
+import SnackCard from '../components/snackcard';
 export default function Concession() {
   return (
-    <div>
-      <h1>Concession Page</h1>
+    <div className="min-h-screen bg-background-900">
+      <Navbar />
+      <SnackCard />
       {/* Concession page content goes here */}
     </div>
   );

@@ -27,6 +27,15 @@ export function AuthProvider({ children }) {
       // Network error - don't log as error, just set user to null
       // This is expected when backend is not running during development
       console.warn('Auth check failed (network error):', error.message);
+        // Don't log 401 errors as they're expected when user is not logged in
+        if (response.status !== 401) {
+          console.error('Error fetching user:', response.status, response.statusText);
+        }
+        setUser(null);
+      }
+    } catch (error) {
+      // Only log actual network errors, not authentication errors
+      console.error('Network error fetching user:', error);
       setUser(null);
     } finally {
       setLoading(false);

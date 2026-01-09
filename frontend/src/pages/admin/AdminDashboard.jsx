@@ -85,6 +85,17 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
+                <h3 className="text-xl font-semibold text-text-primary mb-2">Concession Management</h3>
+                <p className="text-text-secondary mb-4">Manage concessions and discounts.</p>
+                <button
+                  onClick={() => navigate('/concession-management')}
+                  className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
+                >
+                  Go to Concessions
+                </button>
+              </div>
+
+              <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Reports</h3>
                 <p className="text-text-secondary mb-4">View sales and performance reports.</p>
                 <button
