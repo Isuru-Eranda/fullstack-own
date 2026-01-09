@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createHall, getHall, updateHall } from '../../services/hallService';
 import { useNavigate, useParams } from 'react-router-dom';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const HallForm = () => {
   const { id } = useParams();
@@ -110,7 +111,11 @@ const HallForm = () => {
 
   const seatGrid = generatePreview();
 
-  if (loading) return <div className="text-white p-8">Loading hall...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-background-900 flex items-center justify-center">
+      <LoadingLogo size={80} text="Loading hall..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background-900 py-8">

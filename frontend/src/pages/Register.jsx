@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from '../hooks/useNavigate';
 import { toast } from 'react-toastify';
 import Logo from '../components/Logo';
+import LoadingLogo from '../components/LoadingLogo';
 import { API_BASE_URL } from '../utils/api';
 
 export default function Register() {
@@ -161,7 +162,7 @@ export default function Register() {
           >
             <span className="relative z-10 flex items-center justify-center">
               {loading ? (
-                <span className="animate-pulse">Creating account...</span>
+                <LoadingLogo size={24} text="" className="flex-row space-y-0 space-x-2" />
               ) : (
                 <>
                   Register

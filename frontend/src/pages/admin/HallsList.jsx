@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getHalls, deleteHall } from '../../services/hallService';
 import { useNavigate } from 'react-router-dom';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const HallsList = () => {
   const [halls, setHalls] = useState([]);
@@ -34,7 +35,11 @@ const HallsList = () => {
     }
   };
 
-  if (loading) return <div>Loading halls...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-background-900 flex items-center justify-center">
+      <LoadingLogo size={80} text="Loading halls..." />
+    </div>
+  );
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (

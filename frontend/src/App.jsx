@@ -4,6 +4,7 @@ import { AuthContext } from './context/AuthContext';
 import { AuthProvider } from './context/AuthProvider';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import LoadingLogo from './components/LoadingLogo';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -24,7 +25,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background-900">
-        <div className="text-2xl text-text-primary">Loading...</div>
+        <LoadingLogo size={80} text="Loading..." />
       </div>
     );
   }

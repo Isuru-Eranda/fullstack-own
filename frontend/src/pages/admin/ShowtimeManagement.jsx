@@ -4,6 +4,7 @@ import { API_BASE_URL } from "../../utils/api";
 import Modal from "../../components/Modal";
 import BackButton from "../../components/BackButton";
 import Navbar from "../../components/Navbar";
+import LoadingLogo from "../../components/LoadingLogo";
 
 export default function ShowtimeManagement() {
   const { user } = useContext(AuthContext);
@@ -419,8 +420,7 @@ export default function ShowtimeManagement() {
         <div className="bg-surface-600 rounded-xl border border-surface-400/40 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-              <p className="mt-4 text-text-secondary">Loading showtimes...</p>
+              <LoadingLogo size={60} text="Loading showtimes..." />
             </div>
           ) : showtimes.length === 0 ? (
             <div className="p-8 text-center">

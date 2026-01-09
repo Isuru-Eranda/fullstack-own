@@ -4,6 +4,7 @@ import { useNavigate } from '../hooks/useNavigate';
 import Navbar from '../components/Navbar';
 import BackButton from '../components/BackButton';
 import Modal from '../components/Modal';
+import LoadingLogo from '../components/LoadingLogo';
 import { fetchMovieById, deleteMovie } from '../services/movieService';
 
 export default function MovieDetails() {
@@ -71,8 +72,7 @@ export default function MovieDetails() {
       <div className="min-h-screen bg-background-900">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-surface-400 border-t-secondary-300 mb-4"></div>
-          <p className="text-text-secondary uppercase tracking-widest font-bold">Loading movie details...</p>
+          <LoadingLogo size={80} text="Loading movie details..." />
         </div>
       </div>
     );

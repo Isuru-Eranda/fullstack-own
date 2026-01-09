@@ -4,6 +4,7 @@ import { useNavigate } from '../hooks/useNavigate';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal';
 import BackButton from '../components/BackButton';
+import LoadingLogo from '../components/LoadingLogo';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useContext(AuthContext);
@@ -158,7 +159,11 @@ export default function Profile() {
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors duration-200 shadow-lg"
                   disabled={loading}
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {loading ? (
+                    <LoadingLogo size={24} text="" className="flex-row space-y-0 space-x-2" />
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             )}
