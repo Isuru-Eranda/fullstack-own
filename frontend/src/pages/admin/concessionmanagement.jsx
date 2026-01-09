@@ -100,9 +100,9 @@ export default function ConcessionManagement() {
 
 
     return (
-       <div className="min-h-screen bg-background-900 text-text-primary ">
+       <div className="min-h-screen bg-background-900 text-text-primary w-full">
          {/* Header with back button */}
-         <div className="flex items-center justify-between p-4 pt-8">
+         <div className="flex items-center justify-between p-6 m-2">
             <Link 
                 to="/admin-dashboard" 
                 className="flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors"
@@ -118,7 +118,7 @@ export default function ConcessionManagement() {
             
             
             {/* Table Container */}
-            <div className="overflow-x-auto bg-surface-600 rounded-lg border border-surface-400/40 m-6">
+            <div className="overflow-x-auto bg-surface-600 rounded-lg border border-surface-400/40 m-6 w-[80%] mx-auto">
                 <table className="w-full min-w-[1000px] text-[20px] text-left">
                     <thead className="bg-background-800 border-b border-surface-400/40">
                         <tr>
