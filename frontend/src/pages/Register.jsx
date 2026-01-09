@@ -181,6 +181,15 @@ export default function Register() {
             Login here
           </a>
         </p>
+
+        <div className="text-center mt-4">
+          <button
+            onClick={() => navigate('/')}
+            className="text-accent-gold hover:text-accent-blue font-medium underline underline-offset-2 transition-colors"
+          >
+            Or continue as guest
+          </button>
+        </div>
       </div>
     </div>
   );
