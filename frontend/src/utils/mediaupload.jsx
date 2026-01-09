@@ -11,12 +11,12 @@ export default function MediaUpload(file) {
         }
         const timestamp = new Date().getTime();
         const fileName = `${timestamp}-${file.name}`;
-        supabase.storage.from('key').upload(fileName, file, { cacheControl: '3600', upsert: false })
+        supabase.storage.from('Cinema-Project').upload(fileName, file, { cacheControl: '3600', upsert: false })
             .then((response) => {
                 if (response.error) {
                     reject("Error uploading file: " + response.error.message);
                 } else {
-                    const publicUrl = supabase.storage.from('key').getPublicUrl(fileName).data.publicUrl;
+                    const publicUrl = supabase.storage.from('Cinema-Project').getPublicUrl(fileName).data.publicUrl;
                     resolve(publicUrl);
                 }
             })
