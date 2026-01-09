@@ -48,8 +48,8 @@ function AppContent() {
       <Route path="/movies/:id/edit" element={<MovieForm />} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/halls" element={<HallsList />} />
-      <Route path="/halls/:id" element={<HallForm />} />
+      <Route path="/admin/halls" element={<HallsList />} />
+      <Route path="/admin/halls/:id" element={<HallForm />} />
       <Route path="/showtime-management" element={<ShowtimeManagement />} />
       <Route path="/user-management" element={<UserManagement />} />
       <Route path="/concession-management" element={<ConcessionManagement />} />
