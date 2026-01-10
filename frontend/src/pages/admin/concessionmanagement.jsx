@@ -17,11 +17,14 @@ const sampleSnacks = [
 export default function ConcessionManagement() {
     const { user } = useContext(AuthContext);
     const [snacks, setSnacks] = useState(sampleSnacks);
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     
     useEffect(() => {
         const fetchSnacks = async () => {
             try {
+                setIsLoading(true);
+                
                 // Try to fetch from backend with credentials (like ShowtimeManagement)
                 const response = await fetch(`${API_BASE_URL}/snacks`, {
                     credentials: "include", // This includes httpOnly cookies
@@ -50,6 +53,7 @@ export default function ConcessionManagement() {
                         }
                         
                         toast.success('Snacks loaded from database');
+                        setIsLoading(false);
                         return;
                     }
                     throw new Error('Authentication required');
@@ -74,12 +78,12 @@ export default function ConcessionManagement() {
                 console.log('Using sample data - User authentication status:', user ? 'Logged in' : 'Not logged in');
                 
                 if (user) {
-                    toast('Could not load snacks from database. Using sample data.'
-                    
-                    );
+                    toast('Could not load snacks from database. Using sample data.');
                 } else {
                     toast('Login to see live inventory. Showing sample data.');
                 }
+            } finally {
+                setIsLoading(false);
             }
         };
         
@@ -88,6 +92,32 @@ export default function ConcessionManagement() {
 
   
 
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-background-900 text-text-primary w-full">
+                {/* Header with back button */}
+                <div className="flex items-center justify-between p-6">
+                    <Link 
+                        to="/admin-dashboard" 
+                        className="flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors"
+                    >
+                        <BiArrowBack className="text-2xl" />
+                        <span className="text-lg font-medium">Back to Admin Dashboard</span>
+                    </Link>
+                    <h1 className="text-2xl font-bold text-center flex-1">Concession Management</h1>
+                    <div className="w-48"></div> 
+                </div>
+                
+                {/* Loading State */}
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-500 mb-4"></div>
+                    <p className="text-text-secondary text-lg">Loading snacks data...</p>
+                    <p className="text-text-muted text-sm mt-2">Please wait while we fetch the latest inventory</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
        <div className="min-h-screen bg-background-900 text-text-primary w-full">

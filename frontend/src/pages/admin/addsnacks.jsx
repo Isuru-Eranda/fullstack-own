@@ -173,17 +173,62 @@ export default function AddSnacks() {
         } catch (error) {
             toast.dismiss();
             console.error('Error adding snack:', error);
+            console.log('Full error response:', error.response);
             
             if (error.response) {
+                const errorData = error.response.data;
+                const errorMessage = errorData?.message || errorData?.error || '';
+                
+                console.log('Error data:', errorData);
+                console.log('Error message:', errorMessage);
+                
                 if (error.response.status === 401) {
                     toast.error('Session expired. Please log in again.');
                     setTimeout(() => {
                         window.location.href = '/login';
                     }, 2000);
                 } else if (error.response.status === 400) {
-                    toast.error('Invalid data provided. Please check your inputs.');
+                    // Check if it's a duplicate ID error
+                    if (errorMessage.toLowerCase().includes('duplicate') || 
+                        errorMessage.toLowerCase().includes('already exists') ||
+                        errorMessage.toLowerCase().includes('productid') ||
+                        errorMessage.toLowerCase().includes('unique')) {
+                        toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
+                    } else if (errorMessage) {
+                        toast.error(`Validation Error: ${errorMessage}`);
+                    } else {
+                        toast.error('Invalid data provided. Please check your inputs.');
+                    }
+                } else if (error.response.status === 409) {
+                    // Conflict status code - typically used for duplicates
+                    toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
+                } else if (error.response.status === 500) {
+                    // Internal server error - check for specific error messages
+                    if (errorMessage.toLowerCase().includes('duplicate') || 
+                        errorMessage.toLowerCase().includes('already exists') ||
+                        errorMessage.toLowerCase().includes('unique') ||
+                        errorMessage.toLowerCase().includes('productid') ||
+                        errorMessage.toLowerCase().includes('e11000') ||
+                        (errorData?.error && errorData.error.toLowerCase().includes('e11000'))) {
+                        toast.error(`Snack ID "${productId}" already exists. Please use a different Product ID.`);
+                    } else if (errorMessage.toLowerCase().includes('validation')) {
+                        toast.error(`Server validation error: ${errorMessage}`);
+                    } else if (errorMessage) {
+                        toast.error(`Server error: ${errorMessage}`);
+                    } else {
+                        toast.error('Internal server error. Please check if all required fields are valid and try again.');
+                    }
                 } else {
-                    toast.error('Server error occurred. Please try again.');
+                    // Check error message for duplicate-related keywords
+                    if (errorMessage.toLowerCase().includes('duplicate') || 
+                        errorMessage.toLowerCase().includes('already exists') ||
+                        errorMessage.toLowerCase().includes('unique')) {
+                        toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
+                    } else if (errorMessage) {
+                        toast.error(`Error: ${errorMessage}`);
+                    } else {
+                        toast.error('Server error occurred. Please try again.');
+                    }
                 }
             } else {
                 toast.error('Cannot connect to server. Please check if backend is running.');
