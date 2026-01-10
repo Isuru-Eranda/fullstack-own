@@ -1,7 +1,10 @@
 import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from '../hooks/useNavigate';
+import { toast } from 'react-toastify';
+import Modal from '../components/Modal';
 import BackButton from '../components/BackButton';
+import LoadingLogo from '../components/LoadingLogo';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useContext(AuthContext);
@@ -16,6 +19,7 @@ export default function Profile() {
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [message, setMessage] = useState('');
 
   if (!user) {
@@ -26,8 +30,14 @@ export default function Profile() {
     );
   }
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
     await logout();
+    toast.success('You have been successfully logged out.');
     navigate('/login');
   };
 
@@ -149,7 +159,11 @@ export default function Profile() {
                   className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors duration-200 shadow-lg"
                   disabled={loading}
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {loading ? (
+                    <LoadingLogo size={24} text="" className="flex-row space-y-0 space-x-2" />
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             )}
@@ -275,12 +289,6 @@ export default function Profile() {
           {/* Action Buttons */}
           <div className="mt-8 flex gap-4">
             <button
-              onClick={() => navigate('/')}
-              className="px-6 py-3 bg-primary-500 hover:bg-primary-600 rounded-lg font-medium transition-colors duration-200 shadow-lg"
-            >
-              ← Back to Home
-            </button>
-            <button
               onClick={handleLogout}
               className="px-6 py-3 bg-semantic-error hover:bg-semantic-error/80 rounded-lg font-medium transition-colors duration-200 shadow-lg"
             >
@@ -289,6 +297,17 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+        confirmText="Yes, Logout"
+        theme="default"
+      />
     </div>
   );
 }

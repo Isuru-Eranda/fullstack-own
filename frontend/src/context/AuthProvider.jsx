@@ -17,11 +17,23 @@ export function AuthProvider({ children }) {
         const data = await response.json();
         setUser(data.user);
       } else {
-        setUser(null);
+        throw response;
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
-      setUser(null);
+      // Handle the error once here
+      if (error && error.status === 401) {
+        // User not authenticated, that's fine
+        console.warn('Auth check failed (not logged in)');
+        setUser(null);
+      } else if (error && error.status) {
+        // HTTP error from response
+        console.error('Error fetching user:', error.status, error.statusText);
+        setUser(null);
+      } else {
+        // Network error
+        console.error('Network error fetching user:', error);
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

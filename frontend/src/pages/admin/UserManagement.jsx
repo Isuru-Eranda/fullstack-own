@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../utils/api';
 import Modal from '../../components/Modal';
 import Navbar from '../../components/Navbar';
 import BackButton from '../../components/BackButton';
+import LoadingLogo from '../../components/LoadingLogo';
 
 export default function UserManagement() {
   const { user } = useContext(AuthContext);
@@ -85,7 +86,7 @@ export default function UserManagement() {
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-xl text-text-primary">Loading users...</div>
+            <LoadingLogo size={80} text="Loading users..." />
           </div>
         </div>
       </div>

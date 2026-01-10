@@ -26,7 +26,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["https://enimate.netlify.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
     credentials: true, // Allow cookies
   })
 );
@@ -50,33 +50,7 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
-app.use('/api/halls', hallRoutes);
-app.use('/api/seats', seatRoutes);
-app.use('/api/showtimes', showtimeRoutes);
-app.use('/api/snacks', snackRoutes);
-
-// Cleanup expired seat locks every minute
-setInterval(async () => {
-  const expiry = new Date(Date.now() - 5 * 60 * 1000);
-
-  await Show.updateMany(
-    {},
-    {
-      $set: {
-        "seats.$[seat].status": "AVAILABLE",
-        "seats.$[seat].userId": null,
-      },
-    },
-    {
-      arrayFilters: [
-        {
-          "seat.status": "LOCKED",
-          "seat.lockedAt": { $lt: expiry },
-        },
-      ],
-    }
-  );
-}, 60000);
+app.use('/api/halls',hallRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

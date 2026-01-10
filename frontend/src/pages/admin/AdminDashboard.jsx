@@ -1,15 +1,24 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from '../../hooks/useNavigate';
+import { toast } from 'react-toastify';
+import Modal from '../../components/Modal';
 import Navbar from '../../components/Navbar';
 import Logo from '../../components/Logo';
 
 export default function AdminDashboard() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
     await logout();
+    toast.success('You have been successfully logged out.');
     navigate('/login');
   };
 
@@ -76,6 +85,17 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
+                <h3 className="text-xl font-semibold text-text-primary mb-2">Concession Management</h3>
+                <p className="text-text-secondary mb-4">Manage concessions and discounts.</p>
+                <button
+                  onClick={() => navigate('/concession-management')}
+                  className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
+                >
+                  Go to Concessions
+                </button>
+              </div>
+
+              <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Reports</h3>
                 <p className="text-text-secondary mb-4">View sales and performance reports.</p>
                 <button
@@ -109,6 +129,17 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+        confirmText="Yes, Logout"
+        theme="default"
+      />
     </div>
   );
 }
