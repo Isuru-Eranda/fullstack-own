@@ -96,6 +96,8 @@ export default function ConcessionManagement() {
         fetchSnacks();
     }, [user]);
 
+  
+
 
     return (
        <div className="min-h-screen bg-background-900 text-text-primary w-full">
@@ -170,7 +172,15 @@ export default function ConcessionManagement() {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex space-x-2">
-                                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-2xl transition-colors">
+                                        <button 
+                                            onClick={() => {
+                                                
+                                                navigate(`/admin/updatesnack`,{
+                                                    state: snack 
+                                                });
+                                            }}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-2xl transition-colors"
+                                        >
                                            <BiEdit />
                                         </button>
                                         <button 

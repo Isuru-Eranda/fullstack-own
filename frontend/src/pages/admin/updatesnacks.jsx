@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -11,19 +11,24 @@ import { API_BASE_URL } from "../../utils/api";
 
 
 
+
 export default function UpdateSnacks() {
+    const location = useLocation();
     const { user } = useContext(AuthContext);
-    const [productId, setProductId] = useState('');
-    const [productName, setProductName] = useState('');
-    const [labelledPrice, setLabelledPrice] = useState('');
-    const [productPrice, setProductPrice] = useState('');
-    const [productQuantity, setProductQuantity] = useState('');
-    const [productCategory, setProductCategory] = useState('chips');
+    const [productId, setProductId] = useState(location.state?.ProductId );
+    const [productName, setProductName] = useState(location.state?.ProductName );
+    const [labelledPrice, setLabelledPrice] = useState(location.state?.labelledPrice );
+    const [productPrice, setProductPrice] = useState(location.state?.ProductPrice );
+    const [productQuantity, setProductQuantity] = useState(location.state?.ProductQuantity );
+    const [productCategory, setProductCategory] = useState(location.state?.ProductCategory );
     const [productImage, setProductImage] = useState([]);
-    const [productDescription, setProductDescription] = useState('');
-    const [isAvailable, setIsAvailable] = useState('true');
+    const [productDescription, setProductDescription] = useState(location.state?.ProductDescription );
+    const [isAvailable, setIsAvailable] = useState(location.state?.isAvailable);
     const [uploading, setUploading] = useState(false);
     const navigate = useNavigate();
+    
+
+  
 
 
    async function handleSubmit(e) {
