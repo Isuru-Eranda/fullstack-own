@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import { API_BASE_URL } from "../../utils/api";
 
 
 export default function UpdateSnacks() {
+    const { id } = useParams();
     const location = useLocation();
     const { user } = useContext(AuthContext);
     const [productId, setProductId] = useState(location.state?.ProductId );
@@ -43,11 +44,15 @@ export default function UpdateSnacks() {
                 return;
             }
 
-            // Check if images are selected
+            // Check if images are selected or if we have existing images
             if (!productImage || productImage.length === 0) {
-                toast.error("Please select at least one image");
-                setUploading(false);
-                return;
+                // No new images selected, check if we have existing images
+                if (!location.state?.ProductImage || location.state.ProductImage.length === 0) {
+                    toast.error("Please select at least one image");
+                    setUploading(false);
+                    return;
+                }
+                // We have existing images, so we'll use those
             }
 
             // Validate description length
@@ -84,7 +89,7 @@ export default function UpdateSnacks() {
                 return;
             }
 
-            toast.loading("Uploading images...");
+            toast.loading("Processing images...");
 
             // Upload each image file and collect URLs
             const promisesArray = [];
@@ -94,15 +99,20 @@ export default function UpdateSnacks() {
                 promisesArray.push(MediaUpload(productImage[i]));
             }
 
-            if (promisesArray.length === 0) {
-                toast.error("No valid images to upload");
-                setUploading(false);
-                return;
-            }
+            let finalImages = [];
 
-            const responses = await Promise.all(promisesArray);
-            toast.dismiss();
-            console.log("Uploaded image URLs:", responses);
+            if (promisesArray.length > 0) {
+                // Upload new images
+                const responses = await Promise.all(promisesArray);
+                finalImages = responses;
+                toast.dismiss();
+                console.log("Uploaded new image URLs:", responses);
+            } else {
+                // No new images to upload, use existing images
+                finalImages = location.state?.ProductImage || [];
+                toast.dismiss();
+                console.log("Using existing images:", finalImages);
+            }
 
             const snackData = {
                 ProductId: productId.trim(),
@@ -111,20 +121,20 @@ export default function UpdateSnacks() {
                 ProductPrice: parseFloat(productPrice),
                 ProductQuantity: parseInt(productQuantity),
                 ProductCategory: productCategory,
-                ProductImage: responses, // Use the array of image URLs from uploads
+                ProductImage: finalImages,
                 ProductDescription: productDescription.trim(),
-                isAvailable: isAvailable === 'true',
+                isAvailable: isAvailable,
             };
 
             // Loading toast for API call
-            const loadingToast = toast.loading('Adding snack...');
+            const loadingToast = toast.loading('Updating snack...');
             
             let response;
             
             // Try with credentials first (httpOnly cookies)
             try {
-                response = await fetch(`${API_BASE_URL}/snacks`, {
-                    method: 'POST',
+                response = await fetch(`${API_BASE_URL}/snacks/${id}`, {
+                    method: 'PUT',
                     credentials: "include",
                     headers: {
                         'Content-Type': 'application/json',
@@ -136,7 +146,7 @@ export default function UpdateSnacks() {
                     throw new Error('Cookie auth failed');
                 }
                 
-                console.log("Snack added successfully with cookies");
+                console.log("Snack updated successfully with cookies");
             } catch (cookieError) {
                 console.log('Cookie auth failed, trying with token:', cookieError.message);
                 
@@ -149,18 +159,18 @@ export default function UpdateSnacks() {
                     return;
                 }
                 
-                response = await axios.post(`${API_BASE_URL}/snacks`, snackData, {
+                response = await axios.put(`${API_BASE_URL}/snacks/${id}`, snackData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
                 });
                 
-                console.log("Snack added successfully with token");
+                console.log("Snack updated successfully with token");
             }
 
             toast.dismiss(loadingToast);
-            toast.success('Snack added successfully!');
+            toast.success('Snack updated successfully!');
             
             // Clear form
             setProductId('');
@@ -177,7 +187,7 @@ export default function UpdateSnacks() {
             
         } catch (error) {
             toast.dismiss();
-            console.error('Error adding snack:', error);
+            console.error('Error updating snack:', error);
             
             if (error.response) {
                 if (error.response.status === 401) {
@@ -205,7 +215,9 @@ export default function UpdateSnacks() {
             <div className="w-[900px]  bottom-60 bg-background-800 rounded-lg mt-20 p-6">
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack ID</label>
-                    <input onChange={
+                    <input
+                     disabled
+                     onChange={
                         (e) => {setProductId(e.target.value)}
                     } value={productId}
                     type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
@@ -283,7 +295,7 @@ export default function UpdateSnacks() {
                         Cancel
                     </Link>
                     <Link onClick={handleSubmit} className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded">
-                        Add Snack
+                        Update Snack
                     </Link>
                 </div>
                 

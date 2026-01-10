@@ -11,17 +11,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 
 const sampleSnacks = [
-    {
-        ProductId: "SNK001",
-        ProductName: "Classic Butter Popcorn",
-        labelledPrice: 12.99,
-        ProductPrice: 9.99,
-        ProductQuantity: 50,
-        ProductCategory: "popcorn",
-        ProductImage: ["/uploads/movies/popcorn1.jpg", "/uploads/movies/popcorn2.jpg"],
-        ProductDescription: "Fresh, warm butter popcorn made with premium kernels and real butter. A classic movie theater favorite that's perfect for any film experience.",
-        isAvailable: true,
-    }
+   
 ];  
 
 export default function ConcessionManagement() {
@@ -174,8 +164,8 @@ export default function ConcessionManagement() {
                                     <div className="flex space-x-2">
                                         <button 
                                             onClick={() => {
-                                                
-                                                navigate(`/admin/updatesnack`,{
+                                                const snackId = snack._id || snack.ProductId;
+                                                navigate(`/admin/updatesnack/${snackId}`, {
                                                     state: snack 
                                                 });
                                             }}
