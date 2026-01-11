@@ -21,12 +21,34 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-background-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Logo size={56} />
-          <h1 className="text-3xl font-bold text-text-primary">Admin Dashboard</h1>
-          {user && (
-            <div className="ml-4 text-sm text-text-muted">Signed in as <span className="font-medium">{user.firstName || user.email}</span></div>
-          )}
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Logo size={56} />
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary">Admin Dashboard</h1>
+              {user && (
+                <div className="text-sm text-text-muted">Signed in as <span className="font-medium">{user.firstName || user.email}</span></div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/profile')}
+              className="hidden md:inline-flex items-center gap-2 px-3 py-2 bg-surface-500 hover:bg-surface-500/80 rounded-lg"
+              title="View profile"
+            >
+              <span className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">{((user?.firstName || user?.email || 'U').charAt(0)).toUpperCase()}</span>
+              <span className="text-text-primary">{user?.firstName || user?.email}</span>
+            </button>
+
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="px-3 py-2 bg-semantic-error hover:bg-red-600 text-white rounded-lg font-medium"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-8">
