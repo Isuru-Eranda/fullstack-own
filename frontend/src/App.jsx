@@ -21,6 +21,8 @@ import UserManagement from './pages/admin/UserManagement';
 import ConcessionManagement from './pages/admin/concessionmanagement';
 import AddSnacks from './pages/admin/addsnacks';
 import AdminLayout from './pages/admin/AdminLayout';
+import Cinemas from './pages/Cinemas';
+import CinemasManagement from './pages/admin/CinemasManagement';
 import { AdminOnlyRoute } from './components/ProtectedRoute';
 import { Navigate } from 'react-router-dom';
 
@@ -43,6 +45,7 @@ function AppContent() {
       <Route path="/register" element={<Register />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/movies" element={<Movies />} />
+      <Route path="/cinemas" element={<Cinemas />} />
       <Route path="/movies/new" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id" element={<MovieDetails />} />
       <Route path="/movies/:id/edit" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
@@ -54,6 +57,7 @@ function AppContent() {
         <Route index element={<AdminDashboard />} />
         <Route path="halls" element={<HallsList />} />
         <Route path="halls/:id" element={<HallForm />} />
+        <Route path="cinemas" element={<CinemasManagement />} />
         <Route path="showtime-management" element={<ShowtimeManagement />} />
         <Route path="user-management" element={<UserManagement />} />
         <Route path="concession-management" element={<ConcessionManagement />} />

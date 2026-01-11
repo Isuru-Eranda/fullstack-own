@@ -209,6 +209,12 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
+                <h3 className="text-xl font-semibold text-text-primary mb-2">Manage Cinemas</h3>
+                <p className="text-text-secondary mb-4">Add and manage cinema locations and images.</p>
+                <button onClick={() => navigate('/admin-dashboard/cinemas')} className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors">Go to Cinemas</button>
+              </div>
+
+              <div className="bg-surface-500 p-6 rounded-xl border border-secondary-400/40 hover:border-primary-500 transition-colors">
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Manage Showtimes</h3>
                 <p className="text-text-secondary mb-4">Schedule and manage movie showtimes.</p>
                 <button onClick={() => navigate('/admin-dashboard/showtime-management')} className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors">Go to Showtimes</button>

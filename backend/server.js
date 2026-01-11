@@ -11,6 +11,7 @@ const showtimeRoutes = require("./routes/showtimeRoutes");
 const bookingRoutes = require("./routes/bookings");
 const snackRoutes = require("./routes/snackRoute");
 const hallRoutes = require("./routes/halls");
+const cinemaRoutes = require("./routes/cinemas");
 
 // Connect to MongoDB
 connectDB();
@@ -37,6 +38,7 @@ app.use('/api/movies', movieRoutes);
 app.use('/api/halls',hallRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/cinemas', cinemaRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
