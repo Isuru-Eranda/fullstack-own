@@ -23,6 +23,7 @@ import Concession from './pages/concession';
 import ConcessionManagement from './pages/admin/concessionmanagement';
 import AddSnacks from './pages/admin/addsnacks';
 import UpdateSnacks from './pages/admin/updatesnacks';
+import SnackOverviewPage from './pages/snackoverviewpage';
 import NotFound from './pages/notfound';
 
 function AppContent() {
@@ -56,6 +57,8 @@ function AppContent() {
       <Route path="/concession-management" element={<ConcessionManagement />} />
       <Route path="/concessions" element={<Concession />} />
       <Route path="/admin/addsnack" element={<AddSnacks />} />
+      <Route path="/snacksoverview" element={<SnackOverviewPage />} />
+      <Route path="/snacksoverview/:snackid" element={<SnackOverviewPage />} />
       <Route path="/admin/updatesnack/:id" element={<UpdateSnacks />} />
       
       <Route path="*" element={<NotFound />} />

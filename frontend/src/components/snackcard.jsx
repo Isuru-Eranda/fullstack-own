@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom";
+
 export default function SnackCard({ snack }) {
     return (
-        <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-md w-full max-w-[300px] sm:max-w-[350px] md:max-w-[350px] lg:max-w-[380px] xl:max-w-[400px] h-auto min-h-[400px] sm:min-h-[450px] md:min-h-[480px] lg:min-h-[500px] flex flex-col items-center transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/25 hover:scale-105 hover:bg-gray-800 hover:border-purple-500 cursor-pointer">
+        <Link to={`/snacksoverview/${snack._id}`} className="bg-gray-900 border border-gray-700 rounded-lg shadow-md w-full max-w-[300px] sm:max-w-[350px] md:max-w-[350px] lg:max-w-[380px] xl:max-w-[400px] h-auto min-h-[400px] sm:min-h-[450px] md:min-h-[480px] lg:min-h-[500px] flex flex-col items-center transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/25 hover:scale-105 hover:bg-gray-800 hover:border-purple-500 cursor-pointer">
             <img 
                 src={snack.ProductImage && snack.ProductImage[0] ? snack.ProductImage[0] : '/placeholder-snack.jpg'} 
                 alt={snack.ProductName || 'Snack'}
@@ -19,6 +21,6 @@ export default function SnackCard({ snack }) {
                     }
                 </span>
             </div>
-        </div>
+        </Link>
     );
 }
