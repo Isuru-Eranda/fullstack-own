@@ -11,9 +11,11 @@ const seatSocket = require("./sockets/seatSocket");
 const authRoutes = require("./routes/auth");
 const movieRoutes = require("./routes/movies");
 const showtimeRoutes = require("./routes/showtimeRoutes");
+const bookingRoutes = require("./routes/bookings");
 const snackRoutes = require("./routes/snackRoute");
 const hallRoutes = require("./routes/halls");
 const seatRoutes = require("./routes/SeatRoutes");
+const cinemaRoutes = require("./routes/cinemas");
 
 // Import models
 const Show = require("./models/Show");
@@ -50,7 +52,10 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
-app.use('/api/halls',hallRoutes);
+app.use('/api/halls', hallRoutes);
+app.use('/api/showtimes', showtimeRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/cinemas', cinemaRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

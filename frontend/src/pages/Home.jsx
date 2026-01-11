@@ -71,6 +71,7 @@ export default function Home() {
         }))}
         onBooking={handleBooking}
         onCinemaChange={setSelectedCinema}
+        hideSelectorsForAdmin={true}
       />
 
       {selectedCinema && (

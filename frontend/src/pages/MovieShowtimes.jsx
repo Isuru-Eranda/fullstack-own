@@ -71,8 +71,8 @@ export default function MovieShowtimes() {
   };
 
   const handleBookNow = (showtimeId) => {
-    // This would navigate to seat selection (Member 5's work)
-    alert(`Booking showtime ${showtimeId} - This would go to seat selection`);
+    // Navigate to seat selection / booking page
+    window.location.href = `/showtimes/${showtimeId}/book`;
   };
 
   if (loading) {
@@ -191,13 +191,14 @@ export default function MovieShowtimes() {
           {showtimes.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📅</div>
-              <h3 className="text-xl text-text-primary mb-2">
-                No Showtimes Available
-              </h3>
-              <p className="text-text-secondary">
+              <h3 className="text-xl text-text-primary mb-2">No Showtimes Available</h3>
+              <p className="text-text-secondary mb-4">
                 {selectedDate
                   ? `No showtimes scheduled for ${formatDate(selectedDate)}`
                   : "No upcoming showtimes scheduled for this movie"}
+              </p>
+              <p className="text-text-secondary">
+                If you're an admin, add showtimes in the <a href="/showtime-management" className="text-accent-magenta underline">Showtime Management</a> page. Admins must create movies and halls before scheduling.
               </p>
             </div>
           ) : (

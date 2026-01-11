@@ -85,6 +85,18 @@ export default function Navbar() {
             >
               Concessions
             </button>
+            {user && user.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin-dashboard')}
+                className={`font-medium transition uppercase tracking-wide text-sm ${
+                  isActive('/admin-dashboard') 
+                    ? 'text-secondary-300 border-b-2 border-secondary-300 pb-1' 
+                    : 'text-text-primary hover:text-purple-400'
+                }`}
+              >
+                Admin
+              </button>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-4">
