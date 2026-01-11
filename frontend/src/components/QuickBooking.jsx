@@ -78,11 +78,15 @@ export default function QuickBooking({ movies = [], cinemas = [], onBooking, onC
                 required
               >
                 <option value="">Choose a movie...</option>
-                {movies.map(movie => (
-                  <option key={movie.id} value={movie.id}>
-                    {movie.title}
-                  </option>
-                ))}
+                {movies.map((movie, idx) => {
+                  const key = movie._id || movie.id || `movie-${idx}`;
+                  const val = movie._id || movie.id || key;
+                  return (
+                    <option key={key} value={val}>
+                      {movie.title}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -121,11 +125,15 @@ export default function QuickBooking({ movies = [], cinemas = [], onBooking, onC
                 required
               >
                 <option value="">Choose a Hall...</option>
-                {cinemaList.map(cinema => (
-                  <option key={cinema.id} value={cinema.id}>
-                    {cinema.name}
-                  </option>
-                ))}
+                {cinemaList.map((cinema, idx) => {
+                  const key = cinema._id || cinema.id || `cinema-${idx}`;
+                  const val = cinema._id || cinema.id || key;
+                  return (
+                    <option key={key} value={val}>
+                      {cinema.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

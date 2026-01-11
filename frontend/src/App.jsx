@@ -11,12 +11,16 @@ import Profile from './pages/Profile';
 import Movies from './pages/Movies';
 import MovieDetails from './pages/MovieDetails';
 import MovieShowtimes from './pages/MovieShowtimes';
+import BookShowtime from './pages/BookShowtime';
 import MovieForm from './pages/MovieForm';
 import HallsList from './pages/admin/HallsList';
 import HallForm from './pages/admin/HallForm';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ShowtimeManagement from './pages/admin/ShowtimeManagement';
 import UserManagement from './pages/admin/UserManagement';
+import ConcessionManagement from './pages/admin/concessionmanagement';
+import AddSnacks from './pages/admin/addsnacks';
+import { AdminOnlyRoute } from './components/ProtectedRoute';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
@@ -37,15 +41,18 @@ function AppContent() {
       <Route path="/register" element={<Register />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/movies" element={<Movies />} />
-      <Route path="/movies/new" element={<MovieForm />} />
+      <Route path="/movies/new" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id" element={<MovieDetails />} />
-      <Route path="/movies/:id/edit" element={<MovieForm />} />
+      <Route path="/movies/:id/edit" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/halls" element={<HallsList />} />
-      <Route path="/halls/:id" element={<HallForm />} />
-      <Route path="/showtime-management" element={<ShowtimeManagement />} />
-      <Route path="/user-management" element={<UserManagement />} />
+      <Route path="/showtimes/:id/book" element={<BookShowtime />} />
+      <Route path="/admin-dashboard" element={<AdminOnlyRoute><AdminDashboard /></AdminOnlyRoute>} />
+      <Route path="/halls" element={<AdminOnlyRoute><HallsList /></AdminOnlyRoute>} />
+      <Route path="/halls/:id" element={<AdminOnlyRoute><HallForm /></AdminOnlyRoute>} />
+      <Route path="/showtime-management" element={<AdminOnlyRoute><ShowtimeManagement /></AdminOnlyRoute>} />
+      <Route path="/user-management" element={<AdminOnlyRoute><UserManagement /></AdminOnlyRoute>} />
+      <Route path="/concession-management" element={<AdminOnlyRoute><ConcessionManagement /></AdminOnlyRoute>} />
+      <Route path="/admin/addsnack" element={<AdminOnlyRoute><AddSnacks /></AdminOnlyRoute>} />
     </Routes>
   );
 }

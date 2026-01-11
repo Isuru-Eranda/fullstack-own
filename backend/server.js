@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const movieRoutes = require("./routes/movies");
 const showtimeRoutes = require("./routes/showtimeRoutes");
+const bookingRoutes = require("./routes/bookings");
 const snackRoutes = require("./routes/snackRoute");
 const hallRoutes = require("./routes/halls");
 
@@ -35,7 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/halls',hallRoutes);
 app.use('/api/showtimes', showtimeRoutes);
-app.use('/api/snacks', snackRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

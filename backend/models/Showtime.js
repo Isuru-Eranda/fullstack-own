@@ -45,6 +45,11 @@ const showtimeSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // Track booked seat labels (e.g., "A1") for seat-level reservation
+  bookedSeats: {
+    type: [String],
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,
