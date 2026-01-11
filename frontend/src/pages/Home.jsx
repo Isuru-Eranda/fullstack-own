@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useSocket } from '../context/SocketContext';
 import { useNavigate } from '../hooks/useNavigate';
 import Navbar from '../components/Navbar';
 import HeroCarousel from '../components/HeroCarousel';
@@ -10,7 +9,6 @@ import { fetchMovies } from '../services/movieService';
 
 export default function Home() {
   const { user } = useContext(AuthContext);
-  const { socket } = useSocket();
   const navigate = useNavigate();
   const [featuredMovies, setFeaturedMovies] = useState([]);
   const [nowShowingMovies, setNowShowingMovies] = useState([]);
@@ -19,26 +17,6 @@ export default function Home() {
   useEffect(() => {
     loadMovies();
   }, []);
-
-  // Socket.IO real-time updates for home page
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMovieEvent = () => {
-      // Reload movies when any movie changes
-      loadMovies();
-    };
-
-    socket.on('movieCreated', handleMovieEvent);
-    socket.on('movieUpdated', handleMovieEvent);
-    socket.on('movieDeleted', handleMovieEvent);
-
-    return () => {
-      socket.off('movieCreated', handleMovieEvent);
-      socket.off('movieUpdated', handleMovieEvent);
-      socket.off('movieDeleted', handleMovieEvent);
-    };
-  }, [socket]);
 
   const loadMovies = async () => {
     setLoading(true);

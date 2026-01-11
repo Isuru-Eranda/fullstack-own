@@ -1,8 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const http = require("http");
-const { Server } = require("socket.io");
 require("dotenv").config();
 const connectDB = require("./config/db");
 
@@ -15,28 +13,6 @@ const showtimeRoutes = require("./routes/showtimeRoutes");
 connectDB();
 
 const app = express();
-const server = http.createServer(app);
-
-// Configure Socket.IO with CORS
-const io = new Server(server, {
-  cors: {
-    origin: ["https://enimate.netlify.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
-    credentials: true,
-    methods: ["GET", "POST"]
-  }
-});
-
-// Make io accessible to routes
-app.set('io', io);
-
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
 
 // Middleware
 app.use(
@@ -70,6 +46,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5008;
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -50,14 +50,12 @@ const movieSchema = new mongoose.Schema(
     /**
      * Movie genre(s)
      * @type {Array<String>}
-     * @enum ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation', 'Documentary', 'Adventure', 'Western', 'Mystery', 'Fantasy', 'Crime']
-     * @required
+     * @enum ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation', 'Documentary', 'Adventure']
      */
     genre: {
       type: [String],
-      required: [true, 'At least one genre must be specified'],
       enum: {
-        values: ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation', 'Documentary', 'Adventure', 'Western', 'Mystery', 'Fantasy', 'Crime'],
+        values: ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation', 'Documentary', 'Adventure'],
         message: '{VALUE} is not a valid genre',
       },
       validate: {
@@ -157,18 +155,16 @@ const movieSchema = new mongoose.Schema(
     /**
      * Movie status
      * @type {String}
-     * @enum ['now_showing', 'coming_soon', 'archived', 'upcoming', 'Now Showing', 'Coming Soon', 'Archived', 'Upcoming']
-     * @required
-     * @default 'now_showing'
+     * @enum ['Now Showing', 'Coming Soon', 'Archived']
+     * @default 'Now Showing'
      */
     status: {
       type: String,
-      required: [true, 'Movie status is required'],
       enum: {
-        values: ['now_showing', 'coming_soon', 'archived', 'upcoming', 'Now Showing', 'Coming Soon', 'Archived', 'Upcoming'],
-        message: '{VALUE} is not a valid status. Valid options: now_showing, coming_soon, archived, upcoming',
+        values: ['Now Showing', 'Coming Soon', 'Archived'],
+        message: '{VALUE} is not a valid status',
       },
-      default: 'now_showing',
+      default: 'Now Showing',
     },
   },
   { 

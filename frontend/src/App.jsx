@@ -1,13 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from './context/AuthContext';
 import { AuthProvider } from './context/AuthProvider';
-<<<<<<< Updated upstream
-=======
-import { SocketProvider } from './context/SocketContext';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import LoadingLogo from './components/LoadingLogo';
->>>>>>> Stashed changes
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -96,38 +89,7 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-<<<<<<< Updated upstream
       <AppContent />
-=======
-      <SocketProvider>
-        <BrowserRouter>
-          <AppContent />
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#1f2937',
-                color: '#f9fafb',
-                border: '1px solid #374151',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#ffffff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#ffffff',
-                },
-              },
-            }}
-          />
-        </BrowserRouter>
-      </SocketProvider>
->>>>>>> Stashed changes
     </AuthProvider>
   );
 }

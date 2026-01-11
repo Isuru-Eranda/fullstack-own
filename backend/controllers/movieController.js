@@ -1,5 +1,6 @@
 const Movie = require('../models/Movie');
-const { uploadToB2, deleteFromB2 } = require('../services/b2Storage');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * @desc    Create a new movie
@@ -32,13 +33,8 @@ exports.createMovie = async (req, res) => {
     // Handle poster image if uploaded
     let posterImage = '/images/placeholder-poster.jpg'; // Default placeholder
     if (req.file) {
-      // Upload to Backblaze B2
-      posterImage = await uploadToB2(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype,
-        'movies'
-      );
+      // Store relative path from uploads directory
+      posterImage = `/uploads/movies/${req.file.filename}`;
     }
 
     // Parse genre and cast arrays if they come as JSON strings
@@ -83,17 +79,6 @@ exports.createMovie = async (req, res) => {
 
     // Create movie in database
     const movie = await Movie.create(movieData);
-
-    console.log('Movie created successfully:', movie._id, 'Status:', movie.status);
-
-    // Emit socket event for real-time update
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('movieCreated', movie);
-      console.log('Socket event emitted: movieCreated');
-    } else {
-      console.warn('Socket.IO not available');
-    }
 
     res.status(201).json({
       success: true,
@@ -156,22 +141,8 @@ exports.getAllMovies = async (req, res) => {
 
     // Filter by status
     if (req.query.status) {
-      // Handle all formats: "Now Showing", "now_showing", "upcoming", etc.
-      const statusMap = {
-        'Now Showing': ['Now Showing', 'now_showing'],
-        'Coming Soon': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'Upcoming': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'Archived': ['Archived', 'archived'],
-        'now_showing': ['Now Showing', 'now_showing'],
-        'coming_soon': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'upcoming': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'archived': ['Archived', 'archived']
-      };
-      const statusValues = statusMap[req.query.status] || [req.query.status];
-      query.status = { $in: statusValues };
+      query.status = req.query.status;
     }
-
-    console.log('Fetching movies with query:', JSON.stringify(query));
 
     // Sorting
     let sort = {};
@@ -198,8 +169,6 @@ exports.getAllMovies = async (req, res) => {
       .sort(sort)
       .limit(limit)
       .skip(skip);
-
-    console.log(`Found ${movies.length} movies matching query`);
 
     // Get total count for pagination
     const totalMovies = await Movie.countDocuments(query);
@@ -288,17 +257,19 @@ exports.updateMovie = async (req, res) => {
 
     // Handle new poster image upload
     if (req.file) {
-      // Delete old poster image from B2 if it exists and is not the placeholder
+      // Delete old poster image if it exists and is not the placeholder
       if (movie.posterImage && !movie.posterImage.includes('placeholder')) {
-        await deleteFromB2(movie.posterImage);
+        const oldImagePath = path.join(__dirname, '..', movie.posterImage);
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            fs.unlinkSync(oldImagePath);
+          } catch (err) {
+            console.error('Error deleting old image:', err);
+          }
+        }
       }
-      // Upload new image to B2
-      movie.posterImage = await uploadToB2(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype,
-        'movies'
-      );
+      // Update with new image path
+      movie.posterImage = `/uploads/movies/${req.file.filename}`;
     }
 
     // Parse genre and cast arrays if they come as JSON strings
@@ -340,12 +311,6 @@ exports.updateMovie = async (req, res) => {
 
     // Save updated movie (this will trigger validation)
     const updatedMovie = await movie.save();
-
-    // Emit socket event for real-time update
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('movieUpdated', updatedMovie);
-    }
 
     res.status(200).json({
       success: true,
@@ -399,19 +364,22 @@ exports.deleteMovie = async (req, res) => {
       });
     }
 
-    // Delete associated poster image from B2 if it exists and is not the placeholder
+    // Delete associated poster image if it exists and is not the placeholder
     if (movie.posterImage && !movie.posterImage.includes('placeholder')) {
-      await deleteFromB2(movie.posterImage);
+      const imagePath = path.join(__dirname, '..', movie.posterImage);
+      if (fs.existsSync(imagePath)) {
+        try {
+          fs.unlinkSync(imagePath);
+          console.log('Deleted poster image:', imagePath);
+        } catch (err) {
+          console.error('Error deleting poster image:', err);
+          // Continue with movie deletion even if file deletion fails
+        }
+      }
     }
 
     // Delete movie from database
     await Movie.findByIdAndDelete(req.params.id);
-
-    // Emit socket event for real-time update
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('movieDeleted', req.params.id);
-    }
 
     res.status(200).json({
       success: true,
@@ -445,7 +413,6 @@ exports.searchMovies = async (req, res) => {
       genre,
       language,
       minRating,
-      status,
       page = 1,
       limit = 10,
     } = req.query;
@@ -469,22 +436,6 @@ exports.searchMovies = async (req, res) => {
     // Filter by language
     if (language) {
       query.language = language;
-    }
-
-    // Filter by status (handle all formats)
-    if (status) {
-      const statusMap = {
-        'Now Showing': ['Now Showing', 'now_showing'],
-        'Coming Soon': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'Upcoming': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'Archived': ['Archived', 'archived'],
-        'now_showing': ['Now Showing', 'now_showing'],
-        'coming_soon': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'upcoming': ['Coming Soon', 'coming_soon', 'upcoming', 'Upcoming'],
-        'archived': ['Archived', 'archived']
-      };
-      const statusValues = statusMap[status] || [status];
-      query.status = { $in: statusValues };
     }
 
     // Filter by minimum rating

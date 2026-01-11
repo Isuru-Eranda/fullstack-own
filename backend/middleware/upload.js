@@ -1,14 +1,32 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 /**
  * Multer Middleware for Movie Poster Uploads
- * Handles file validation and storage configuration for Backblaze B2 cloud storage
+ * Handles file validation, storage configuration, and error handling
  */
 
-// Configure memory storage for B2 upload
-// Files are stored in memory as Buffer objects to be uploaded to cloud storage
-const storage = multer.memoryStorage();
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '../uploads/movies');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename: timestamp-originalname
+    const uniqueSuffix = Date.now();
+    const ext = path.extname(file.originalname);
+    const nameWithoutExt = path.basename(file.originalname, ext);
+    const sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9]/g, '-');
+    cb(null, `${uniqueSuffix}-${sanitizedName}${ext}`);
+  },
+});
 
 // File filter - accept only images
 const fileFilter = (req, file, cb) => {

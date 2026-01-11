@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useSocket } from '../context/SocketContext';
 import { useNavigate } from '../hooks/useNavigate';
 import Navbar from '../components/Navbar';
 import QuickBooking from '../components/QuickBooking';
@@ -13,7 +12,6 @@ import { fetchMovies, deleteMovie } from '../services/movieService';
  */
 export default function Movies() {
   const { user } = useContext(AuthContext);
-  const { socket } = useSocket();
   const navigate = useNavigate();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,72 +26,11 @@ export default function Movies() {
     loadMovies();
   }, [activeTab]);
 
-  // Socket.IO real-time updates
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMovieCreated = (newMovie) => {
-      console.log('Movie created:', newMovie);
-      // Check if the new movie matches current tab
-      const currentStatus = activeTab === 'now-showing' ? 'now_showing' : 'coming_soon';
-      const newMovieStatus = newMovie.status?.toLowerCase().replace(/\s+/g, '_');
-      
-      if (newMovieStatus === currentStatus || newMovie.status === (activeTab === 'now-showing' ? 'Now Showing' : 'Coming Soon')) {
-        setMovies((prev) => [newMovie, ...prev]);
-      }
-    };
-
-    const handleMovieUpdated = (updatedMovie) => {
-      console.log('Movie updated:', updatedMovie);
-      setMovies((prev) => {
-        // Check if movie should remain in current tab
-        const currentStatus = activeTab === 'now-showing' ? 'now_showing' : 'coming_soon';
-        const updatedMovieStatus = updatedMovie.status?.toLowerCase().replace(/\s+/g, '_');
-        
-        const belongsInTab = updatedMovieStatus === currentStatus || 
-                            updatedMovie.status === (activeTab === 'now-showing' ? 'Now Showing' : 'Coming Soon');
-        
-        if (belongsInTab) {
-          // Update or add the movie
-          const exists = prev.some((m) => m._id === updatedMovie._id);
-          if (exists) {
-            return prev.map((m) => (m._id === updatedMovie._id ? updatedMovie : m));
-          } else {
-            return [updatedMovie, ...prev];
-          }
-        } else {
-          // Remove from current tab if status changed
-          return prev.filter((m) => m._id !== updatedMovie._id);
-        }
-      });
-    };
-
-    const handleMovieDeleted = (movieId) => {
-      console.log('Movie deleted:', movieId);
-      setMovies((prev) => prev.filter((m) => m._id !== movieId));
-    };
-
-    socket.on('movieCreated', handleMovieCreated);
-    socket.on('movieUpdated', handleMovieUpdated);
-    socket.on('movieDeleted', handleMovieDeleted);
-
-    return () => {
-      socket.off('movieCreated', handleMovieCreated);
-      socket.off('movieUpdated', handleMovieUpdated);
-      socket.off('movieDeleted', handleMovieDeleted);
-    };
-  }, [socket, activeTab]);
-
   const loadMovies = async () => {
     setLoading(true);
     setError('');
     try {
-      let status;
-      if (activeTab === 'now-showing') status = 'Now Showing';
-      else if (activeTab === 'coming-soon') status = 'Coming Soon';
-      else if (activeTab === 'archived') status = 'archived';
-      // Support 'upcoming' as equivalent to 'coming soon'
-      if (activeTab === 'coming-soon' || activeTab === 'upcoming') status = 'upcoming';
+      const status = activeTab === 'now-showing' ? 'Now Showing' : 'Coming Soon';
       const data = await fetchMovies({ status, limit: 100 });
       setMovies(data.movies || []);
     } catch (err) {
@@ -169,18 +106,6 @@ export default function Movies() {
               >
                 Coming Soon
               </button>
-              {isAdmin && (
-                <button
-                  onClick={() => setActiveTab('archived')}
-                  className={`text-sm md:text-base font-bold uppercase tracking-widest pb-2 transition ${
-                    activeTab === 'archived'
-                      ? 'border-b-4 border-semantic-error text-semantic-error'
-                      : 'text-text-muted hover:text-semantic-error'
-                  }`}
-                >
-                  Archived Movies
-                </button>
-              )}
             </div>
 
             {/* Admin: Add Movie Button */}
