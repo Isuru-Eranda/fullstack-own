@@ -4,7 +4,6 @@ import { AuthContext } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/api";
 import Modal from "../../components/Modal";
 import BackButton from "../../components/BackButton";
-import Navbar from "../../components/Navbar";
 import LoadingLogo from "../../components/LoadingLogo";
 
 export default function ShowtimeManagement() {
@@ -325,7 +324,6 @@ export default function ShowtimeManagement() {
 
   return (
     <div className="min-h-screen bg-background-900 text-text-primary">
-      <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

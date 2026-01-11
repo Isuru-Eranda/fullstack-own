@@ -2,7 +2,6 @@ import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../utils/api';
 import Modal from '../../components/Modal';
-import Navbar from '../../components/Navbar';
 import BackButton from '../../components/BackButton';
 import LoadingLogo from '../../components/LoadingLogo';
 
@@ -83,7 +82,6 @@ export default function UserManagement() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background-900">
-        <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <LoadingLogo size={80} text="Loading users..." />
@@ -95,7 +93,6 @@ export default function UserManagement() {
 
   return (
     <div className="min-h-screen bg-background-900">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">

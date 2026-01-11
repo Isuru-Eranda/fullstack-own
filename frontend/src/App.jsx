@@ -20,7 +20,9 @@ import ShowtimeManagement from './pages/admin/ShowtimeManagement';
 import UserManagement from './pages/admin/UserManagement';
 import ConcessionManagement from './pages/admin/concessionmanagement';
 import AddSnacks from './pages/admin/addsnacks';
+import AdminLayout from './pages/admin/AdminLayout';
 import { AdminOnlyRoute } from './components/ProtectedRoute';
+import { Navigate } from 'react-router-dom';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
@@ -46,13 +48,25 @@ function AppContent() {
       <Route path="/movies/:id/edit" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
       <Route path="/showtimes/:id/book" element={<BookShowtime />} />
-      <Route path="/admin-dashboard" element={<AdminOnlyRoute><AdminDashboard /></AdminOnlyRoute>} />
-      <Route path="/halls" element={<AdminOnlyRoute><HallsList /></AdminOnlyRoute>} />
-      <Route path="/halls/:id" element={<AdminOnlyRoute><HallForm /></AdminOnlyRoute>} />
-      <Route path="/showtime-management" element={<AdminOnlyRoute><ShowtimeManagement /></AdminOnlyRoute>} />
-      <Route path="/user-management" element={<AdminOnlyRoute><UserManagement /></AdminOnlyRoute>} />
-      <Route path="/concession-management" element={<AdminOnlyRoute><ConcessionManagement /></AdminOnlyRoute>} />
-      <Route path="/admin/addsnack" element={<AdminOnlyRoute><AddSnacks /></AdminOnlyRoute>} />
+
+      {/* Nested admin routes under /admin-dashboard to ensure admin lands in dashboard layout */}
+      <Route path="/admin-dashboard" element={<AdminOnlyRoute><AdminLayout /></AdminOnlyRoute>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="halls" element={<HallsList />} />
+        <Route path="halls/:id" element={<HallForm />} />
+        <Route path="showtime-management" element={<ShowtimeManagement />} />
+        <Route path="user-management" element={<UserManagement />} />
+        <Route path="concession-management" element={<ConcessionManagement />} />
+        <Route path="addsnack" element={<AddSnacks />} />
+      </Route>
+
+      {/* Keep old top-level admin paths redirecting to new nested paths for backward compatibility */}
+      <Route path="/halls" element={<Navigate to="/admin-dashboard/halls" replace />} />
+      <Route path="/halls/:id" element={<Navigate to="/admin-dashboard/halls/:id" replace />} />
+      <Route path="/showtime-management" element={<Navigate to="/admin-dashboard/showtime-management" replace />} />
+      <Route path="/user-management" element={<Navigate to="/admin-dashboard/user-management" replace />} />
+      <Route path="/concession-management" element={<Navigate to="/admin-dashboard/concession-management" replace />} />
+      <Route path="/admin/addsnack" element={<Navigate to="/admin-dashboard/addsnack" replace />} />
     </Routes>
   );
 }

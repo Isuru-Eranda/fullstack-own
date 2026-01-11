@@ -6,7 +6,7 @@ import { useNavigate } from '../hooks/useNavigate';
  * @param {Object} movie - Movie object containing id, title, posterImage, genre, duration, rating, status
  * @param {Function} onClick - Callback function when card is clicked
  */
-export default function MovieCard({ movie, onClick, showAdminActions = false, onEdit, onDelete }) {
+export default function MovieCard({ movie, onClick }) {
   const navigate = useNavigate();
   const handleCardClick = () => {
     if (onClick) {
@@ -63,30 +63,7 @@ export default function MovieCard({ movie, onClick, showAdminActions = false, on
           </div>
         )}
         
-        {/* Admin actions + Book Button */}
-        {showAdminActions && (
-          <div className="flex gap-2 mb-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onEdit) onEdit(movie);
-              }}
-              className="flex-1 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-sm rounded shadow"
-            >
-              Edit
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDelete) onDelete(movie);
-              }}
-              className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded shadow"
-            >
-              Delete
-            </button>
-          </div>
-        )}
-
+        {/* Book Button */}
         <button 
           className="w-full py-2 bg-primary-500 border border-secondary-400 text-text-primary font-bold text-sm hover:bg-primary-600 transition uppercase tracking-wider rounded shadow-lg"
           onClick={(e) => {
@@ -112,7 +89,4 @@ MovieCard.propTypes = {
     status: PropTypes.string,
   }).isRequired,
   onClick: PropTypes.func,
-  showAdminActions: PropTypes.bool,
-  onEdit: PropTypes.func,
-  onDelete: PropTypes.func,
 };

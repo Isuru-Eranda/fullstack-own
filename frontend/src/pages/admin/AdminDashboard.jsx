@@ -4,7 +4,6 @@ import { useNavigate } from '../../hooks/useNavigate';
 import { API_BASE_URL } from '../../utils/api';
 import { toast } from 'react-toastify';
 import Modal from '../../components/Modal';
-import Navbar from '../../components/Navbar';
 import Logo from '../../components/Logo';
 
 export default function AdminDashboard() {
@@ -141,7 +140,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background-900">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-surface-600 rounded-2xl shadow-2xl p-8 border border-surface-400/40">
@@ -172,7 +170,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Manage Halls</h3>
                 <p className="text-text-secondary mb-4">Configure cinema halls and seating arrangements.</p>
                 <button
-                  onClick={() => navigate('/halls')}
+                  onClick={() => navigate('/admin-dashboard/halls')}
                   className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
                 >
                   Go to Halls
@@ -183,7 +181,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Manage Showtimes</h3>
                 <p className="text-text-secondary mb-4">Schedule and manage movie showtimes.</p>
                 <button
-                  onClick={() => navigate('/showtime-management')}
+                  onClick={() => navigate('/admin-dashboard/showtime-management')}
                   className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
                 >
                   Go to Showtimes
@@ -193,7 +191,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-semibold text-text-primary mb-2">User Management</h3>
                 <p className="text-text-secondary mb-4">View and manage user accounts.</p>
                 <button
-                  onClick={() => navigate('/user-management')}
+                  onClick={() => navigate('/admin-dashboard/user-management')}
                   className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
                 >
                   Go to Users
@@ -204,7 +202,7 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-semibold text-text-primary mb-2">Manage Concessions</h3>
                 <p className="text-text-secondary mb-4">Add and manage concession items and inventory.</p>
                 <button
-                  onClick={() => navigate('/concession-management')}
+                  onClick={() => navigate('/admin-dashboard/concession-management')}
                   className="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg transition-colors"
                 >
                   Go to Concessions
@@ -233,54 +231,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* Movie overview: small list with next showtime and manage button */}
-              <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-surface-500 p-6 rounded-xl border border-secondary-400/40">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-text-primary">Movies & Upcoming Showtimes</h3>
-                  <button
-                    onClick={fetchMoviesOverview}
-                    className="px-4 py-2 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg"
-                  >
-                    Refresh
-                  </button>
-                </div>
-                {moviesOverview.length === 0 ? (
-                  <div className="text-text-secondary">No movies loaded. Try refreshing or check backend.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {moviesOverview.map(({ movie, nextShowtime, count }) => (
-                      <div key={movie._id} className="flex items-center gap-4 p-3 bg-surface-600 rounded">
-                        <div className="w-16 h-20 bg-gray-700 rounded overflow-hidden flex-shrink-0">
-                          {movie.posterImage ? (
-                            <img src={movie.posterImage.startsWith('http') ? movie.posterImage : `${API_BASE_URL.replace('/api','')}${movie.posterImage}`} alt={movie.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">🎬</div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold">{movie.title}</div>
-                          <div className="text-sm text-text-secondary">{count} upcoming showtime{count===1?'':'s'}</div>
-                          <div className="text-sm text-text-secondary">Next: {nextShowtime ? new Date(nextShowtime.startTime).toLocaleString() : '—'}</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => openCreateShowtimeModal(movie)}
-                            className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                          >
-                            Add Showtime
-                          </button>
-                          <button
-                            onClick={() => navigate(`/showtime-management?movieId=${movie._id}`)}
-                            className="px-3 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm"
-                          >
-                            Manage
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Movies overview removed — admin dashboard simplified */}
             </div>
 
             {/* Create Showtime Modal */}
@@ -361,28 +312,12 @@ export default function AdminDashboard() {
               </Modal>
             )}
 
-            <div className="mt-8 text-center">
-              <button
-                onClick={handleLogout}
-                className="px-6 py-2 bg-semantic-error hover:bg-red-600 text-white font-bold rounded-lg transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+            {/* Logout moved to admin sidebar */}
           </div>
         </div>
       </div>
 
-      {/* Logout Confirmation Modal */}
-      <Modal
-        isOpen={showLogoutModal}
-        title="Confirm Logout"
-        message="Are you sure you want to log out?"
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={confirmLogout}
-        confirmText="Yes, Logout"
-        theme="default"
-      />
+      {/* Logout moved to admin sidebar */}
     </div>
   );
 }
