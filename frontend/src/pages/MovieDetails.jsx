@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { useNavigate } from '../hooks/useNavigate';
 import Navbar from '../components/Navbar';
 import BackButton from '../components/BackButton';
@@ -10,6 +11,7 @@ export default function MovieDetails() {
   // Get movie ID from URL path (e.g., /movies/123)
   const movieId = window.location.pathname.split('/')[2];
   const { user } = useContext(AuthContext);
+  const { socket } = useSocket();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,32 @@ export default function MovieDetails() {
       loadMovie();
     }
   }, [movieId]);
+
+  // Socket.IO real-time updates for movie details
+  useEffect(() => {
+    if (!socket || !movieId) return;
+
+    const handleMovieUpdated = (updatedMovie) => {
+      if (updatedMovie._id === movieId) {
+        setMovie(updatedMovie);
+      }
+    };
+
+    const handleMovieDeleted = (deletedMovieId) => {
+      if (deletedMovieId === movieId) {
+        // Movie was deleted, redirect to movies page
+        navigate('/movies');
+      }
+    };
+
+    socket.on('movieUpdated', handleMovieUpdated);
+    socket.on('movieDeleted', handleMovieDeleted);
+
+    return () => {
+      socket.off('movieUpdated', handleMovieUpdated);
+      socket.off('movieDeleted', handleMovieDeleted);
+    };
+  }, [socket, movieId, navigate]);
 
   const loadMovie = async () => {
     setLoading(true);
