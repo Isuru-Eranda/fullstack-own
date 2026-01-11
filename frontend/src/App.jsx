@@ -57,6 +57,7 @@ function AppContent() {
       <Route path="/concessions" element={<Concession />} />
       <Route path="/admin/addsnack" element={<AddSnacks />} />
       <Route path="/admin/updatesnack/:id" element={<UpdateSnacks />} />
+      
       <Route path="*" element={<NotFound />} />
       
 
