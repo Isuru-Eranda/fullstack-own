@@ -206,7 +206,8 @@ export default function ShowtimeManagement() {
     try {
       const num = Number(amount) || 0;
       return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(num);
-    } catch (_err) {
+    } catch (err) {
+      console.debug('formatCurrency error', err);
       return `Rs ${Number(amount || 0).toFixed(2)}`;
     }
   };
@@ -272,8 +273,9 @@ export default function ShowtimeManagement() {
           // Normalize startTime
           try {
             payload.startTime = new Date(payload.startTime).toISOString();
-          } catch (_err) {
-            // continue and let backend validate
+          } catch (err) {
+            // Invalid date string — let backend validate but log for debugging
+            console.debug('Invalid startTime format for showtime payload', err);
           }
 
           // Ensure totalSeats if missing: try to infer from hall
@@ -340,7 +342,8 @@ export default function ShowtimeManagement() {
       // Normalize startTime to ISO for update as well
       try {
         payload.startTime = new Date(payload.startTime).toISOString();
-      } catch (_err) {
+      } catch (err) {
+        console.debug('Invalid start time for update', err);
         setError('Invalid start time format');
         return;
       }

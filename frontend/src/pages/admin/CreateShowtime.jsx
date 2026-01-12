@@ -171,7 +171,7 @@ export default function CreateShowtime() {
           payload.hallId = hallId;
           const hallObj = modalHalls.find(h => String(h._id) === String(hallId)) || halls.find(h => String(h._id) === String(hallId));
           if (hallObj && hallObj.cinemaId) payload.cinemaId = hallObj.cinemaId._id || hallObj.cinemaId;
-          try { payload.startTime = new Date(payload.startTime).toISOString(); } catch {}
+          try { payload.startTime = new Date(payload.startTime).toISOString(); } catch (err) { console.debug('Invalid startTime for create', err); }
           if (!payload.totalSeats || Number(payload.totalSeats) <= 0) {
             let capacity = null;
             if (hallObj) {
