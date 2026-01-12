@@ -176,7 +176,7 @@ export default function MovieShowtimes() {
               <img
                 src={movie.posterImage.startsWith('http') ? movie.posterImage : `${API_BASE_URL.replace('/api', '')}${movie.posterImage}`}
                 alt={movie.title}
-                className="w-48 h-72 rounded-lg object-cover"
+                className="w-36 h-52 sm:w-48 sm:h-72 rounded-lg object-cover flex-shrink-0"
               />
             )}
 
@@ -232,12 +232,13 @@ export default function MovieShowtimes() {
               Available Showtimes
             </h2>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2">
               <label className="text-text-secondary">Cinema:</label>
               <select
                 value={selectedCinema}
                 onChange={(e) => setSelectedCinema(e.target.value)}
-                className="px-3 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                className="min-w-0 text-sm px-3 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                style={{width: 'max-content'}}
               >
                 <option value="">All cinemas</option>
                 {cinemas.map((c) => (
@@ -250,7 +251,8 @@ export default function MovieShowtimes() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                className="min-w-0 text-sm px-3 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                style={{width: 'max-content'}}
               />
               {selectedDate && (
                 <button
@@ -275,11 +277,11 @@ export default function MovieShowtimes() {
               {/* Admin instruction removed per request */}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {showtimes.map((showtime) => (
                 <div
                   key={showtime._id}
-                  className="bg-surface-500 rounded-lg p-4 border border-surface-400 hover:border-secondary-400 transition-colors"
+                  className="bg-surface-500 rounded-lg p-3 sm:p-4 border border-surface-400 hover:border-secondary-400 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -322,8 +324,8 @@ export default function MovieShowtimes() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <div className="text-xl font-bold text-secondary-300">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div className="text-xl font-bold text-secondary-300 text-center sm:text-left">
                       {formatCurrency(showtime.price)}
                     </div>
                     <button
@@ -332,7 +334,7 @@ export default function MovieShowtimes() {
                         showtime.status !== "scheduled" ||
                         showtime.seatsAvailable === 0
                       }
-                      className={`px-4 py-2 rounded-lg font-medium ${
+                      className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium ${
                         showtime.status === "scheduled" &&
                         showtime.seatsAvailable > 0
                           ? "bg-primary-500 hover:bg-primary-600 text-white"
