@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -11,19 +11,25 @@ import { API_BASE_URL } from "../../utils/api";
 
 
 
-export default function AddSnacks() {
+
+export default function UpdateSnacks() {
+    const { id } = useParams();
+    const location = useLocation();
     const { user } = useContext(AuthContext);
-    const [productId, setProductId] = useState('');
-    const [productName, setProductName] = useState('');
-    const [labelledPrice, setLabelledPrice] = useState('');
-    const [productPrice, setProductPrice] = useState('');
-    const [productQuantity, setProductQuantity] = useState('');
-    const [productCategory, setProductCategory] = useState('chips');
+    const [productId, setProductId] = useState(location.state?.ProductId );
+    const [productName, setProductName] = useState(location.state?.ProductName );
+    const [labelledPrice, setLabelledPrice] = useState(location.state?.labelledPrice );
+    const [productPrice, setProductPrice] = useState(location.state?.ProductPrice );
+    const [productQuantity, setProductQuantity] = useState(location.state?.ProductQuantity );
+    const [productCategory, setProductCategory] = useState(location.state?.ProductCategory );
     const [productImage, setProductImage] = useState([]);
-    const [productDescription, setProductDescription] = useState('');
-    const [isAvailable, setIsAvailable] = useState('true');
+    const [productDescription, setProductDescription] = useState(location.state?.ProductDescription );
+    const [isAvailable, setIsAvailable] = useState(location.state?.isAvailable);
     const [uploading, setUploading] = useState(false);
     const navigate = useNavigate();
+    
+
+  
 
 
    async function handleSubmit(e) {
@@ -38,11 +44,15 @@ export default function AddSnacks() {
                 return;
             }
 
-            // Check if images are selected
+            // Check if images are selected or if we have existing images
             if (!productImage || productImage.length === 0) {
-                toast.error("Please select at least one image");
-                setUploading(false);
-                return;
+                // No new images selected, check if we have existing images
+                if (!location.state?.ProductImage || location.state.ProductImage.length === 0) {
+                    toast.error("Please select at least one image");
+                    setUploading(false);
+                    return;
+                }
+                // We have existing images, so we'll use those
             }
 
             // Validate description length
@@ -79,7 +89,7 @@ export default function AddSnacks() {
                 return;
             }
 
-            toast.loading("Uploading images...");
+            toast.loading("Processing images...");
 
             // Upload each image file and collect URLs
             const promisesArray = [];
@@ -89,15 +99,20 @@ export default function AddSnacks() {
                 promisesArray.push(MediaUpload(productImage[i]));
             }
 
-            if (promisesArray.length === 0) {
-                toast.error("No valid images to upload");
-                setUploading(false);
-                return;
-            }
+            let finalImages = [];
 
-            const responses = await Promise.all(promisesArray);
-            toast.dismiss();
-            console.log("Uploaded image URLs:", responses);
+            if (promisesArray.length > 0) {
+                // Upload new images
+                const responses = await Promise.all(promisesArray);
+                finalImages = responses;
+                toast.dismiss();
+                console.log("Uploaded new image URLs:", responses);
+            } else {
+                // No new images to upload, use existing images
+                finalImages = location.state?.ProductImage || [];
+                toast.dismiss();
+                console.log("Using existing images:", finalImages);
+            }
 
             const snackData = {
                 ProductId: productId.trim(),
@@ -106,20 +121,20 @@ export default function AddSnacks() {
                 ProductPrice: parseFloat(productPrice),
                 ProductQuantity: parseInt(productQuantity),
                 ProductCategory: productCategory,
-                ProductImage: responses, // Use the array of image URLs from uploads
+                ProductImage: finalImages,
                 ProductDescription: productDescription.trim(),
-                isAvailable: isAvailable === 'true',
+                isAvailable: isAvailable,
             };
 
             // Loading toast for API call
-            const loadingToast = toast.loading('Adding snack...');
+            const loadingToast = toast.loading('Updating snack...');
             
             let response;
             
             // Try with credentials first (httpOnly cookies)
             try {
-                response = await fetch(`${API_BASE_URL}/snacks`, {
-                    method: 'POST',
+                response = await fetch(`${API_BASE_URL}/snacks/${id}`, {
+                    method: 'PUT',
                     credentials: "include",
                     headers: {
                         'Content-Type': 'application/json',
@@ -131,7 +146,7 @@ export default function AddSnacks() {
                     throw new Error('Cookie auth failed');
                 }
                 
-                console.log("Snack added successfully with cookies");
+                console.log("Snack updated successfully with cookies");
             } catch (cookieError) {
                 console.log('Cookie auth failed, trying with token:', cookieError.message);
                 
@@ -144,18 +159,18 @@ export default function AddSnacks() {
                     return;
                 }
                 
-                response = await axios.post(`${API_BASE_URL}/snacks`, snackData, {
+                response = await axios.put(`${API_BASE_URL}/snacks/${id}`, snackData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
                 });
                 
-                console.log("Snack added successfully with token");
+                console.log("Snack updated successfully with token");
             }
 
             toast.dismiss(loadingToast);
-            toast.success('Snack added successfully!');
+            toast.success('Snack updated successfully!');
             
             // Clear form
             setProductId('');
@@ -172,63 +187,18 @@ export default function AddSnacks() {
             
         } catch (error) {
             toast.dismiss();
-            console.error('Error adding snack:', error);
-            console.log('Full error response:', error.response);
+            console.error('Error updating snack:', error);
             
             if (error.response) {
-                const errorData = error.response.data;
-                const errorMessage = errorData?.message || errorData?.error || '';
-                
-                console.log('Error data:', errorData);
-                console.log('Error message:', errorMessage);
-                
                 if (error.response.status === 401) {
                     toast.error('Session expired. Please log in again.');
                     setTimeout(() => {
                         window.location.href = '/login';
                     }, 2000);
                 } else if (error.response.status === 400) {
-                    // Check if it's a duplicate ID error
-                    if (errorMessage.toLowerCase().includes('duplicate') || 
-                        errorMessage.toLowerCase().includes('already exists') ||
-                        errorMessage.toLowerCase().includes('productid') ||
-                        errorMessage.toLowerCase().includes('unique')) {
-                        toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
-                    } else if (errorMessage) {
-                        toast.error(`Validation Error: ${errorMessage}`);
-                    } else {
-                        toast.error('Invalid data provided. Please check your inputs.');
-                    }
-                } else if (error.response.status === 409) {
-                    // Conflict status code - typically used for duplicates
-                    toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
-                } else if (error.response.status === 500) {
-                    // Internal server error - check for specific error messages
-                    if (errorMessage.toLowerCase().includes('duplicate') || 
-                        errorMessage.toLowerCase().includes('already exists') ||
-                        errorMessage.toLowerCase().includes('unique') ||
-                        errorMessage.toLowerCase().includes('productid') ||
-                        errorMessage.toLowerCase().includes('e11000') ||
-                        (errorData?.error && errorData.error.toLowerCase().includes('e11000'))) {
-                        toast.error(`Snack ID "${productId}" already exists. Please use a different Product ID.`);
-                    } else if (errorMessage.toLowerCase().includes('validation')) {
-                        toast.error(`Server validation error: ${errorMessage}`);
-                    } else if (errorMessage) {
-                        toast.error(`Server error: ${errorMessage}`);
-                    } else {
-                        toast.error('Internal server error. Please check if all required fields are valid and try again.');
-                    }
+                    toast.error('Invalid data provided. Please check your inputs.');
                 } else {
-                    // Check error message for duplicate-related keywords
-                    if (errorMessage.toLowerCase().includes('duplicate') || 
-                        errorMessage.toLowerCase().includes('already exists') ||
-                        errorMessage.toLowerCase().includes('unique')) {
-                        toast.error(`Snack ID "${productId}" already exists. Please use a different ID.`);
-                    } else if (errorMessage) {
-                        toast.error(`Error: ${errorMessage}`);
-                    } else {
-                        toast.error('Server error occurred. Please try again.');
-                    }
+                    toast.error('Server error occurred. Please try again.');
                 }
             } else {
                 toast.error('Cannot connect to server. Please check if backend is running.');
@@ -245,7 +215,9 @@ export default function AddSnacks() {
             <div className="w-[900px]  bottom-60 bg-background-800 rounded-lg mt-20 p-6">
                 <div className="w-full mb-4 flex flex-col">
                     <label className="text-text-primary text-lg font-semibold">Snack ID</label>
-                    <input onChange={
+                    <input
+                     disabled
+                     onChange={
                         (e) => {setProductId(e.target.value)}
                     } value={productId}
                     type="text" className="w-full p-2 mt-2 mb-4 bg-background-700 text-text-primary rounded"/>
@@ -323,7 +295,7 @@ export default function AddSnacks() {
                         Cancel
                     </Link>
                     <Link onClick={handleSubmit} className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded">
-                        Add Snack
+                        Update Snack
                     </Link>
                 </div>
                 

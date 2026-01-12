@@ -117,14 +117,12 @@ const getSnackinfo = async (req, res) => {
         const snackid = req.params.snackid;
         let snack;
         
-        if (checkIsAdmin(req)) {
-            snack = await Snack.findById(snackid);
-        } else {
-            snack = await Snack.findOne({
-                _id: snackid,
-                isAvailable: true
-            });
-        }
+        // For public access, only show available snacks
+        // Admin access would require authentication
+        snack = await Snack.findOne({
+            _id: snackid,
+            isAvailable: true
+        });
         
         if (snack == null) {
             return res.status(404).json({

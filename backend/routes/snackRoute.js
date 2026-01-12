@@ -8,7 +8,7 @@ router.post('/', createSnack);
 router.get('/', protect, getproducts);
 router.delete('/:snackid', protect, deleteSnack);
 router.put('/:snackid', protect, updatesnack);
-router.get('/:snackid', protect, getSnackinfo);
+router.get('/:snackid', getSnackinfo);
 
 module.exports = router;
 

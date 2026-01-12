@@ -34,6 +34,10 @@ export function AuthProvider({ children }) {
         console.error('Network error fetching user:', error);
         setUser(null);
       }
+      // Network error - don't log as error, just set user to null
+      // This is expected when backend is not running during development
+      console.warn('Auth check failed (network error):', error.message);
+      setUser(null);
     } finally {
       setLoading(false);
     }
