@@ -81,20 +81,27 @@ export default function QuickBooking({ movies = [], cinemas = [], onBooking, onC
               >
                 Select Movie
               </label>
-              <select
-                id="movie-select"
-                value={selectedMovie}
-                onChange={(e) => setSelectedMovie(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded"
-                required
-              >
-                <option value="">Choose a movie...</option>
-                {movies.map(movie => (
-                  <option key={movie.id} value={movie.id}>
-                    {movie.title}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="movie-select"
+                  value={selectedMovie}
+                  onChange={(e) => setSelectedMovie(e.target.value)}
+                  className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded appearance-none cursor-pointer pr-10"
+                  required
+                >
+                  <option value="">Choose a movie...</option>
+                  {movies.map(movie => (
+                    <option key={movie.id} value={movie.id}>
+                      {movie.title}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary-300">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {/* Date Input */}
@@ -105,15 +112,17 @@ export default function QuickBooking({ movies = [], cinemas = [], onBooking, onC
               >
                 Select Date
               </label>
-              <input
-                id="date-select"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={today}
-                className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="date-select"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={today}
+                  className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-150 [&::-webkit-calendar-picker-indicator]:sepia [&::-webkit-calendar-picker-indicator]:hue-rotate-180"
+                  required
+                />
+              </div>
             </div>
 
             {/* Cinema Dropdown */}
@@ -124,24 +133,31 @@ export default function QuickBooking({ movies = [], cinemas = [], onBooking, onC
               >
                 Select Hall
               </label>
-              <select
-                id="cinema-select"
-                value={selectedCinema}
-                onChange={handleCinemaChange}
-                className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded"
-                required
-              >
-                <option value="">Choose a Hall...</option>
-                {cinemaList && cinemaList.length > 0 ? (
-                  cinemaList.map(cinema => (
-                    <option key={cinema.id} value={cinema.id}>
-                      {cinema.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>No halls available</option>
-                )}
-              </select>
+              <div className="relative">
+                <select
+                  id="cinema-select"
+                  value={selectedCinema}
+                  onChange={handleCinemaChange}
+                  className="w-full px-4 py-3 bg-surface-500 border border-secondary-400 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-secondary-300 focus:border-secondary-300 text-text-primary rounded appearance-none cursor-pointer pr-10"
+                  required
+                >
+                  <option value="">Choose a Hall...</option>
+                  {cinemaList && cinemaList.length > 0 ? (
+                    cinemaList.map(cinema => (
+                      <option key={cinema.id} value={cinema.id}>
+                        {cinema.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No halls available</option>
+                  )}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary-300">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {/* Buy Tickets Button */}
