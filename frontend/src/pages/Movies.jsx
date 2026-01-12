@@ -50,8 +50,18 @@ export default function Movies() {
     setError('');
     try {
       // Fetch both old and new status values for backward compatibility
-      const statusNew = activeTab === 'now-showing' ? 'now_showing' : 'upcoming';
-      const statusOld = activeTab === 'now-showing' ? 'Now Showing' : 'Coming Soon';
+      let statusNew, statusOld;
+      
+      if (activeTab === 'archived') {
+        statusNew = 'archived';
+        statusOld = 'Archived';
+      } else if (activeTab === 'now-showing') {
+        statusNew = 'now_showing';
+        statusOld = 'Now Showing';
+      } else {
+        statusNew = 'upcoming';
+        statusOld = 'Coming Soon';
+      }
       
       const [dataNew, dataOld] = await Promise.all([
         fetchMovies({ status: statusNew, limit: 100 }),
@@ -137,6 +147,18 @@ export default function Movies() {
               >
                 Coming Soon
               </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('archived')}
+                  className={`text-sm md:text-base font-bold uppercase tracking-widest pb-2 transition ${
+                    activeTab === 'archived'
+                      ? 'border-b-4 border-secondary-300 text-secondary-300'
+                      : 'text-text-muted hover:text-text-secondary'
+                  }`}
+                >
+                  Archive
+                </button>
+              )}
             </div>
 
             {/* Admin: Add Movie Button */}
@@ -195,7 +217,7 @@ export default function Movies() {
           <div className="text-center py-20">
             <div className="text-secondary-400 text-6xl mb-4">🎬</div>
             <p className="text-text-secondary uppercase tracking-widest font-bold mb-2">
-              No {activeTab === 'now-showing' ? 'Movies Showing' : 'Upcoming Movies'}
+              No {activeTab === 'now-showing' ? 'Movies Showing' : activeTab === 'archived' ? 'Archived Movies' : 'Upcoming Movies'}
             </p>
             <p className="text-text-muted text-sm">
               Check back later for updates
