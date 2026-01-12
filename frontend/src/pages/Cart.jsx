@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import LoadingLogo from '../components/LoadingLogo';
 import Navbar from '../components/Navbar';
 import { getCart, updateQty, removeFromCart, clearCart } from '../utils/cart';
 import { API_BASE_URL } from '../utils/api';
@@ -7,9 +8,17 @@ import toast from 'react-hot-toast';
 import { useNavigate } from '../hooks/useNavigate';
 
 export default function Cart() {
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [items, setItems] = useState([]);
   const navigate = useNavigate();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background-900 flex items-center justify-center">
+        <LoadingLogo size={80} text="Loading..." />
+      </div>
+    );
+  }
 
   useEffect(() => {
     setItems(getCart());

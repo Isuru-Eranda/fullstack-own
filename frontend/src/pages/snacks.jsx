@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import Navbar from '../components/Navbar';
+import LoadingLogo from '../components/LoadingLogo';
 import SnackCard from '../components/snackcard';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/api';
@@ -111,9 +112,13 @@ export default function Snacks() {
 
         {/* Content Section */}
         {authLoading ? (
-          <div className="text-center p-4">Loading...</div>
+          <div className="flex items-center justify-center min-h-screen w-full">
+            <LoadingLogo size={80} text="Loading..." />
+          </div>
         ) : loading ? (
-          <div className="text-center p-4">Loading snacks...</div>
+          <div className="flex items-center justify-center min-h-screen w-full">
+            <LoadingLogo size={80} text="Loading..." />
+          </div>
         ) : (
           Array.isArray(filteredSnacks) && filteredSnacks.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 max-w-7xl mx-auto">
