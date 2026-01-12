@@ -947,7 +947,7 @@ export default function ShowtimeManagement() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Price ($) *
+                Price (LKR) *
               </label>
               <input
                 type="number"
