@@ -1,4 +1,4 @@
-export default function Modal({ isOpen, title, message, children, onClose, onConfirm, confirmText = 'OK', theme = 'default' }) {
+export default function Modal({ isOpen, title, message, children, onClose, onConfirm, confirmText = 'OK', theme = 'default', confirmDisabled = false }) {
   if (!isOpen) return null;
 
   // Theme classes
@@ -25,23 +25,37 @@ export default function Modal({ isOpen, title, message, children, onClose, onCon
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`rounded-lg p-6 max-w-sm w-full mx-4 border shadow-2xl ${styles.container}`}
+        className={`rounded-lg p-4 max-w-sm w-full mx-4 border shadow-2xl ${styles.container}`}
       >
-        <h2 className={`text-2xl font-bold mb-4 ${styles.title}`}>{title}</h2>
-        <p className={`mb-6 ${styles.message}`}>{message}</p>
-        {children}
-        <div className="flex gap-4">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h2 className={`text-xl font-bold ${styles.title}`}>{title}</h2>
+            {message && <p className={`text-sm ${styles.message}`}>{message}</p>}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="ml-4 p-1 rounded hover:bg-surface-500 text-text-secondary"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-4">{children}</div>
+
+        <div className="flex justify-end gap-4 mt-2">
           {onConfirm ? (
             <>
               <button
                 onClick={onClose}
-                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition"
               >
                 Cancel
               </button>
               <button
                 onClick={onConfirm}
-                className={`flex-1 py-2 text-white font-bold rounded-lg transition ${styles.button}`}
+                disabled={confirmDisabled}
+                className={`px-4 py-2 text-white font-semibold rounded-lg transition ${styles.button} ${confirmDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {confirmText}
               </button>
@@ -49,7 +63,7 @@ export default function Modal({ isOpen, title, message, children, onClose, onCon
           ) : (
             <button
               onClick={onClose}
-              className={`w-full py-2 text-white font-bold rounded-lg transition ${styles.button}`}
+              className={`px-4 py-2 text-white font-semibold rounded-lg transition ${styles.button}`}
             >
               {confirmText}
             </button>
