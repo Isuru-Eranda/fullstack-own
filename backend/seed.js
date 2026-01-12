@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Movie = require('./models/Movie');
+const Cinema = require('./models/Cinema');
 
 // Load environment variables
 dotenv.config();
@@ -199,6 +200,17 @@ const seedDatabase = async () => {
     insertedMovies.forEach((movie, index) => {
       console.log(`${index + 1}. ${movie.title} (${movie.status}) - ${movie.genre.join(', ')}`);
     });
+
+    // Seed some cinemas
+    console.log('\n🎬 Seeding cinemas...');
+    await Cinema.deleteMany({});
+    const cinemas = [
+      { name: 'Cinemax - Colombo', city: 'Colombo', address: 'No. 12, Galle Road, Colombo', image: 'https://picsum.photos/seed/c1/800/450', description: 'Main city multiplex in Colombo.' },
+      { name: 'Lanka Cinema - Kandy', city: 'Kandy', address: 'Temple Road, Kandy', image: 'https://picsum.photos/seed/c2/800/450', description: 'Comfortable screens in Kandy.' },
+      { name: 'Ocean Cinemas - Galle', city: 'Galle', address: 'Beachside Ave, Galle', image: 'https://picsum.photos/seed/c3/800/450', description: 'Seaside cinema experience.' },
+    ];
+    const insertedCinemas = await Cinema.insertMany(cinemas);
+    console.log(`✅ Inserted ${insertedCinemas.length} cinemas`);
 
     console.log('\n🎉 Database seeding completed successfully!');
     process.exit(0);

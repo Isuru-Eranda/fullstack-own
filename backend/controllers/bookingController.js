@@ -1,0 +1,78 @@
+const mongoose = require('mongoose');
+const Booking = require('../models/Booking');
+const Showtime = require('../models/Showtime');
+
+// Create a booking (protected)
+exports.createBooking = async (req, res) => {
+  const { showtimeId, seats = [], adultCount = 0, childCount = 0 } = req.body;
+
+  if (!showtimeId) return res.status(400).json({ message: 'showtimeId is required' });
+  const totalTickets = Number(adultCount) + Number(childCount);
+  if (totalTickets <= 0) return res.status(400).json({ message: 'At least one ticket required' });
+  if (seats.length !== totalTickets) return res.status(400).json({ message: 'Number of seats must match ticket count' });
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const showtime = await Showtime.findById(showtimeId).session(session);
+    if (!showtime) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Showtime not found' });
+    }
+
+    // Check seat conflicts
+    const conflict = seats.find((s) => showtime.bookedSeats.includes(s));
+    if (conflict) {
+      await session.abortTransaction();
+      return res.status(409).json({ message: `Seat ${conflict} is already booked` });
+    }
+
+    if (showtime.seatsAvailable < totalTickets) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Not enough seats available' });
+    }
+
+    // Price calculation: adult = full, child = 50% (simple rule)
+    const adultPrice = Number(showtime.price) || 0;
+    const childPrice = adultPrice * 0.5;
+    const totalPrice = adultCount * adultPrice + childCount * childPrice;
+
+    // Reserve seats
+    showtime.bookedSeats.push(...seats);
+    showtime.seatsAvailable = showtime.seatsAvailable - totalTickets;
+    await showtime.save({ session });
+
+    const booking = await Booking.create([
+      {
+        userId: req.user._id,
+        showtimeId,
+        seats,
+        adultCount,
+        childCount,
+        totalPrice,
+      },
+    ], { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({ success: true, booking: booking[0], message: 'Booking created' });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Booking creation error:', error);
+    res.status(500).json({ message: 'Server error creating booking' });
+  }
+};
+
+// Get bookings for current user
+exports.getUserBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ userId: req.user._id }).populate('showtimeId');
+    res.status(200).json({ success: true, bookings });
+  } catch (error) {
+    console.error('Get bookings error:', error);
+    res.status(500).json({ message: 'Server error fetching bookings' });
+  }
+};

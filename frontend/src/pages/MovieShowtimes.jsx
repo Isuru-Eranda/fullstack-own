@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { API_BASE_URL } from "../utils/api";
 import Navbar from "../components/Navbar";
 import BackButton from "../components/BackButton";
 import LoadingLogo from "../components/LoadingLogo";
+import { AuthContext } from "../context/AuthContext";
 
 export default function MovieShowtimes() {
   // Get movie ID from URL path (e.g., /movies/123/showtimes)
@@ -12,6 +13,8 @@ export default function MovieShowtimes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const { user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchMovieAndShowtimes();
@@ -70,9 +73,18 @@ export default function MovieShowtimes() {
     });
   };
 
+  const formatCurrency = (value) => {
+    const amount = Number(value) || 0;
+    try {
+      return new Intl.NumberFormat('si-LK', { style: 'currency', currency: 'LKR' }).format(amount);
+    } catch (e) {
+      return `LKR ${amount.toFixed(2)}`;
+    }
+  };
+
   const handleBookNow = (showtimeId) => {
-    // This would navigate to seat selection (Member 5's work)
-    alert(`Booking showtime ${showtimeId} - This would go to seat selection`);
+    // Navigate to seat selection / booking page
+    window.location.href = `/showtimes/${showtimeId}/book`;
   };
 
   if (loading) {
@@ -191,14 +203,13 @@ export default function MovieShowtimes() {
           {showtimes.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📅</div>
-              <h3 className="text-xl text-text-primary mb-2">
-                No Showtimes Available
-              </h3>
-              <p className="text-text-secondary">
+              <h3 className="text-xl text-text-primary mb-2">No Showtimes Available</h3>
+              <p className="text-text-secondary mb-4">
                 {selectedDate
                   ? `No showtimes scheduled for ${formatDate(selectedDate)}`
                   : "No upcoming showtimes scheduled for this movie"}
               </p>
+              {/* Admin instruction removed per request */}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -250,7 +261,7 @@ export default function MovieShowtimes() {
 
                   <div className="flex justify-between items-center">
                     <div className="text-xl font-bold text-secondary-300">
-                      ${parseFloat(showtime.price).toFixed(2)}
+                      {formatCurrency(showtime.price)}
                     </div>
                     <button
                       onClick={() => handleBookNow(showtime._id)}
