@@ -195,7 +195,7 @@ export default function ConcessionManagement() {
                                         <button 
                                             onClick={() => {
                                                 const snackId = snack._id || snack.ProductId;
-                                                navigate(`/admin/updatesnack/${snackId}`, {
+                                                navigate(`/admin-dashboard/updatesnack/${snackId}`, {
                                                     state: snack 
                                                 });
                                             }}

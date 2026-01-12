@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { AuthProvider } from './context/AuthProvider';
 // Toast container moved to main.jsx to ensure it mounts once at app root
@@ -20,11 +20,13 @@ import ShowtimeManagement from './pages/admin/ShowtimeManagement';
 import UserManagement from './pages/admin/UserManagement';
 import ConcessionManagement from './pages/admin/concessionmanagement';
 import AddSnacks from './pages/admin/addsnacks';
+import UpdateSnacks from './pages/admin/updatesnacks';
 import AdminLayout from './pages/admin/AdminLayout';
 import Cinemas from './pages/Cinemas';
 import CinemasManagement from './pages/admin/CinemasManagement';
+import SnackOverviewPage from './pages/snackoverviewpage';
 import { AdminOnlyRoute } from './components/ProtectedRoute';
-import { Navigate } from 'react-router-dom';
+import Concession from './pages/concession';
 
 function AppContent() {
   const { loading } = useContext(AuthContext);
@@ -51,6 +53,8 @@ function AppContent() {
       <Route path="/movies/:id/edit" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
       <Route path="/showtimes/:id/book" element={<BookShowtime />} />
+      <Route path="/concessions" element={<Concession />} />
+      <Route path= "snacksoverview/:snackid" element= {<SnackOverviewPage />} />
 
       {/* Nested admin routes under /admin-dashboard to ensure admin lands in dashboard layout */}
       <Route path="/admin-dashboard" element={<AdminOnlyRoute><AdminLayout /></AdminOnlyRoute>}>
@@ -62,6 +66,7 @@ function AppContent() {
         <Route path="user-management" element={<UserManagement />} />
         <Route path="concession-management" element={<ConcessionManagement />} />
         <Route path="addsnack" element={<AddSnacks />} />
+        <Route path="updatesnack/:id" element={<UpdateSnacks />} />
       </Route>
 
       {/* Keep old top-level admin paths redirecting to new nested paths for backward compatibility */}
@@ -71,6 +76,7 @@ function AppContent() {
       <Route path="/user-management" element={<Navigate to="/admin-dashboard/user-management" replace />} />
       <Route path="/concession-management" element={<Navigate to="/admin-dashboard/concession-management" replace />} />
       <Route path="/admin/addsnack" element={<Navigate to="/admin-dashboard/addsnack" replace />} />
+
     </Routes>
   );
 }

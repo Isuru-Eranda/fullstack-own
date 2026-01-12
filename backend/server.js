@@ -55,6 +55,7 @@ app.use('/api/movies', movieRoutes);
 app.use('/api/halls', hallRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/snacks', snackRoutes);
 app.use('/api/cinemas', cinemaRoutes);
 
 // Health check

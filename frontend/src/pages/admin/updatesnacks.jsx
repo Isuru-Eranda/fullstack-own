@@ -1,7 +1,7 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import MediaUpload from "../../utils/mediaupload";
 import { AuthContext } from "../../context/AuthContext";
@@ -23,14 +23,47 @@ export default function UpdateSnacks() {
     const [productQuantity, setProductQuantity] = useState(location.state?.ProductQuantity );
     const [productCategory, setProductCategory] = useState(location.state?.ProductCategory );
     const [productImage, setProductImage] = useState([]);
+    const [existingImages, setExistingImages] = useState(location.state?.ProductImage || []);
     const [productDescription, setProductDescription] = useState(location.state?.ProductDescription );
     const [isAvailable, setIsAvailable] = useState(location.state?.isAvailable);
     const [uploading, setUploading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start as true to show loading initially
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
     
-
-  
-
+    // Fetch snack data if not provided via location.state
+    useEffect(() => {
+        const fetchSnackData = async () => {
+            if (!location.state && id) {
+                setLoading(true);
+                try {
+                    const response = await axios.get(`${API_BASE_URL}/snacks/${id}`, {
+                        withCredentials: true
+                    });
+                    const snack = response.data.snack;
+                    setProductId(snack.ProductId);
+                    setProductName(snack.ProductName);
+                    setLabelledPrice(snack.labelledPrice);
+                    setProductPrice(snack.ProductPrice);
+                    setProductQuantity(snack.ProductQuantity);
+                    setProductCategory(snack.ProductCategory);
+                    setProductDescription(snack.ProductDescription);
+                    setIsAvailable(snack.isAvailable);
+                    setExistingImages(snack.ProductImage || []);
+                } catch (error) {
+                    console.error('Error fetching snack:', error);
+                    setError('Failed to load snack data');
+                    toast.error('Failed to load snack data');
+                } finally {
+                    setLoading(false);
+                }
+            } else if (location.state) {
+                // If data is provided via location.state, no need to fetch
+                setLoading(false);
+            }
+        };
+        fetchSnackData();
+    }, [id, location.state]);
 
    async function handleSubmit(e) {
         e.preventDefault();
@@ -45,14 +78,19 @@ export default function UpdateSnacks() {
             }
 
             // Check if images are selected or if we have existing images
-            if (!productImage || productImage.length === 0) {
+            const hasNewImages = productImage && productImage.length > 0 && productImage[0] !== null;
+            
+            if (!hasNewImages) {
                 // No new images selected, check if we have existing images
-                if (!location.state?.ProductImage || location.state.ProductImage.length === 0) {
+                if (!existingImages || existingImages.length === 0) {
                     toast.error("Please select at least one image");
                     setUploading(false);
                     return;
                 }
                 // We have existing images, so we'll use those
+                console.log("No new images selected, will use existing images");
+            } else {
+                console.log("New images selected:", productImage.length);
             }
 
             // Validate description length
@@ -89,14 +127,16 @@ export default function UpdateSnacks() {
                 return;
             }
 
-            toast.loading("Processing images...");
+            toast.info("Processing images...");
 
             // Upload each image file and collect URLs
             const promisesArray = [];
 
-            for (let i = 0; i < productImage.length; i++) {
-                if (!productImage[i]) continue; // Skip null or undefined files
-                promisesArray.push(MediaUpload(productImage[i]));
+            if (hasNewImages) {
+                for (let i = 0; i < productImage.length; i++) {
+                    if (!productImage[i]) continue; // Skip null or undefined files
+                    promisesArray.push(MediaUpload(productImage[i]));
+                }
             }
 
             let finalImages = [];
@@ -105,12 +145,10 @@ export default function UpdateSnacks() {
                 // Upload new images
                 const responses = await Promise.all(promisesArray);
                 finalImages = responses;
-                toast.dismiss();
                 console.log("Uploaded new image URLs:", responses);
             } else {
                 // No new images to upload, use existing images
-                finalImages = location.state?.ProductImage || [];
-                toast.dismiss();
+                finalImages = existingImages || [];
                 console.log("Using existing images:", finalImages);
             }
 
@@ -127,7 +165,7 @@ export default function UpdateSnacks() {
             };
 
             // Loading toast for API call
-            const loadingToast = toast.loading('Updating snack...');
+            toast.info('Updating snack...');
             
             let response;
             
@@ -142,11 +180,16 @@ export default function UpdateSnacks() {
                     body: JSON.stringify(snackData),
                 });
                 
+                const responseData = await response.json();
+                
                 if (!response.ok) {
-                    throw new Error('Cookie auth failed');
+                    console.log('Fetch response:', responseData);
+                    throw new Error(`HTTP ${response.status}: ${responseData.message || 'Unknown error'}`);
                 }
                 
                 console.log("Snack updated successfully with cookies");
+                toast.success('Snack updated successfully!');
+                
             } catch (cookieError) {
                 console.log('Cookie auth failed, trying with token:', cookieError.message);
                 
@@ -159,20 +202,35 @@ export default function UpdateSnacks() {
                     return;
                 }
                 
-                response = await axios.put(`${API_BASE_URL}/snacks/${id}`, snackData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-                
-                console.log("Snack updated successfully with token");
+                try {
+                    response = await axios.put(`${API_BASE_URL}/snacks/${id}`, snackData, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    
+                    console.log("Snack updated successfully with token");
+                    toast.success('Snack updated successfully!');
+                    
+                } catch (tokenError) {
+                    console.error('Token auth failed:', tokenError);
+                    
+                    if (tokenError.response?.status === 403) {
+                        toast.error('Access denied. Admin privileges required.');
+                    } else if (tokenError.response?.status === 401) {
+                        toast.error('Session expired. Please log in again.');
+                        navigate('/login');
+                    } else {
+                        toast.error(`Update failed: ${tokenError.response?.data?.message || tokenError.message}`);
+                    }
+                    setUploading(false);
+                    return;
+                }
             }
 
-            toast.dismiss(loadingToast);
-            toast.success('Snack updated successfully!');
             
-            // Clear form
+            // Clear form after successful update
             setProductId('');
             setProductName('');
             setLabelledPrice('');
@@ -183,7 +241,7 @@ export default function UpdateSnacks() {
             setProductDescription('');
             setIsAvailable('true');
             
-            navigate('/concession-management');
+            navigate('/admin-dashboard/concession-management');
             
         } catch (error) {
             toast.dismiss();
@@ -208,6 +266,30 @@ export default function UpdateSnacks() {
         }
     }
 
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background-900 text-text-primary flex justify-center items-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
+                    <p className="mt-4 text-lg">Loading snack data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-background-900 text-text-primary flex justify-center items-center">
+                <div className="text-center">
+                    <p className="text-red-500 text-lg">{error}</p>
+                    <Link to="/concession-management" className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                        Back to Management
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background-900 text-text-primary flex justify-center items-center">
@@ -263,7 +345,25 @@ export default function UpdateSnacks() {
                     </select>
                 </div>
                 <div className="w-full mb-4 flex flex-col">
-                    <label className="text-text-primary text-lg font-semibold">Image</label>
+                    <label className="text-text-primary text-lg font-semibold">Current Images</label>
+                    {existingImages && existingImages.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-2 mt-2 mb-4">
+                            {existingImages.map((imageUrl, index) => (
+                                <img 
+                                    key={index}
+                                    src={imageUrl}
+                                    alt={`Current image ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded border border-gray-600"
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-400 text-sm mt-2 mb-4">No current images</p>
+                    )}
+                </div>
+                <div className="w-full mb-4 flex flex-col">
+                    <label className="text-text-primary text-lg font-semibold">Upload New Images (Optional)</label>
+                    <p className="text-gray-400 text-sm mb-2">Leave empty to keep current images</p>
                     <input 
                     onChange={(e) => {setProductImage(e.target.files)}}
                     
@@ -294,9 +394,16 @@ export default function UpdateSnacks() {
                     <Link to="/concession-management" className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
                         Cancel
                     </Link>
-                    <Link onClick={handleSubmit} className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded">
-                        Update Snack
-                    </Link>
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={uploading}
+                        className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                    >
+                        {uploading && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        )}
+                        {uploading ? 'Updating...' : 'Update Snack'}
+                    </button>
                 </div>
                 
                 

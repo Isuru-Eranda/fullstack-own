@@ -8,7 +8,8 @@ router.post('/', createSnack);
 router.get('/', protect, getproducts);
 router.delete('/:snackid', protect, deleteSnack);
 router.put('/:snackid', protect, updatesnack);
-router.get('/:snackid', getSnackinfo);
+router.get('/public/:snackid', getSnackinfo); // Public route for viewing snack details
+router.get('/:snackid', protect, getSnackinfo); // Admin route for managing snacks
 
 module.exports = router;
 

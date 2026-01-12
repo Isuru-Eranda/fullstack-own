@@ -64,5 +64,9 @@ exports.isAdmin = async (req, res, next) => {
  * @returns {Boolean} true if user is admin, false otherwise
  */
 exports.checkIsAdmin = (req) => {
-  return req.user && req.user.role === 'admin';
+  console.log('checkIsAdmin - User exists:', !!req.user);
+  console.log('checkIsAdmin - User role:', req.user?.role);
+  const isAdmin = req.user && req.user.role === 'admin';
+  console.log('checkIsAdmin - Result:', isAdmin);
+  return isAdmin;
 };

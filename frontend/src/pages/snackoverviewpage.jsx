@@ -46,7 +46,7 @@ export default function SnackOverviewPage() {
     useEffect(() => {
         if (status === 'loading') {
             const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5008';
-            const apiUrl = `${apiBaseUrl}/api/snacks/${params.snackid}`;
+            const apiUrl = `${apiBaseUrl}/api/snacks/public/${params.snackid}`;
             console.log('API URL:', apiUrl);
             axios.get(apiUrl)
                 .then((response) => {
