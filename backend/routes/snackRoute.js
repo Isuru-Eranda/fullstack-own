@@ -5,7 +5,8 @@ const { protect } = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/', createSnack);
-router.get('/', protect, getproducts);
+// Allow public access to GET list — controller will return only available snacks for non-admins
+router.get('/', getproducts);
 router.delete('/:snackid', protect, deleteSnack);
 router.put('/:snackid', protect, updatesnack);
 router.get('/:snackid', getSnackinfo);

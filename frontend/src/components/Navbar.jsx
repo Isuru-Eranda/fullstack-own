@@ -106,6 +106,9 @@ export default function Navbar() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/cart')} className="px-3 py-2 bg-secondary-700 hover:bg-secondary-600 text-white rounded-lg">
+            Cart
+          </button>
           {/* Mobile menu toggle (visible on small screens) */}
           <button
             onClick={() => setMobileOpen((v) => !v)}

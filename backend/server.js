@@ -16,6 +16,7 @@ const snackRoutes = require("./routes/snackRoute");
 const hallRoutes = require("./routes/halls");
 const seatRoutes = require("./routes/SeatRoutes");
 const cinemaRoutes = require("./routes/cinemas");
+const purchaseRoutes = require("./routes/purchaseRoute");
 
 // Import models
 const Show = require("./models/Show");
@@ -56,6 +57,8 @@ app.use('/api/halls', hallRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/cinemas', cinemaRoutes);
+app.use('/api/snacks', snackRoutes);
+app.use('/api/purchases', purchaseRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

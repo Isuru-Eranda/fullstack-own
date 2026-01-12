@@ -7,6 +7,7 @@ import BackButton from '../components/BackButton';
 import LoadingLogo from '../components/LoadingLogo';
 import HallLayoutPreview from '../components/HallLayoutPreview';
 import { API_BASE_URL } from '../utils/api';
+import { getCart } from '../utils/cart';
 
 export default function BookShowtime() {
   const showtimeId = window.location.pathname.split('/')[2];
@@ -21,10 +22,30 @@ export default function BookShowtime() {
   const [selectedAdult, setSelectedAdult] = useState(1);
   const [selectedChild, setSelectedChild] = useState(0);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [cartItemsCount, setCartItemsCount] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
 
   useEffect(() => {
     fetchShowtime();
   }, [showtimeId]);
+
+  useEffect(() => {
+    // load cart quick summary
+    const cart = getCart();
+    setCartItemsCount(cart.reduce((s, i) => s + (i.qty || 0), 0));
+    setCartTotal(cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 0)), 0));
+  }, []);
+
+  // update cart summary when returning from concessions
+  useEffect(() => {
+    const handleVisibility = () => {
+      const cart = getCart();
+      setCartItemsCount(cart.reduce((s, i) => s + (i.qty || 0), 0));
+      setCartTotal(cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 0)), 0));
+    };
+    window.addEventListener('visibilitychange', handleVisibility);
+    return () => window.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   useEffect(() => {
     const fetchCinema = async () => {
@@ -80,6 +101,8 @@ export default function BookShowtime() {
 
   const totalTickets = Number(selectedAdult) + Number(selectedChild);
 
+  const ticketsTotal = Number(selectedAdult * showtime.price + selectedChild * showtime.price * 0.5);
+
   const hallLayout = showtime.hallId?.layout || { rows: 0, cols: 0, seats: [] };
 
   const handleSeatClick = (seat) => {
@@ -96,6 +119,9 @@ export default function BookShowtime() {
     }
   };
 
+  // update cart summary when returning from concessions
+  
+
   const handleConfirm = async () => {
     if (!user) {
       toast.info('Please login to complete booking');
@@ -109,7 +135,12 @@ export default function BookShowtime() {
     }
 
     try {
-      const body = { showtimeId, seats: selectedSeats, adultCount: selectedAdult, childCount: selectedChild };
+      const body = {
+        showtimeId,
+        seats: selectedSeats,
+        adultCount: selectedAdult,
+        childCount: selectedChild,
+      };
       const res = await fetch(`${API_BASE_URL}/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -225,7 +256,26 @@ export default function BookShowtime() {
                 <div className="text-2xl font-bold text-secondary-300">
                   {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(Number(selectedAdult * showtime.price + selectedChild * showtime.price * 0.5))}
                 </div>
+                <div className="mt-3 space-y-2">
+                  <div className="text-sm text-text-secondary">Cart: {cartItemsCount} item{cartItemsCount !== 1 ? 's' : ''} — {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(cartTotal)}</div>
+                  <div className="text-sm text-text-secondary">Tickets total:</div>
+                  <div className="text-lg font-bold text-secondary-300">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(ticketsTotal)}</div>
+                  <div className="text-sm text-text-secondary mt-1">Grand Total:</div>
+                  <div className="text-2xl font-bold text-secondary-300">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(Number(ticketsTotal + cartTotal))}</div>
+
+                  <div className="mt-3 flex gap-3">
+                    <button
+                      onClick={() => navigate(`/concessions?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}&showtimeId=${showtimeId}&cinemaId=${cinemaQueryId}`)}
+                      className="px-4 py-2 bg-primary-500 text-white rounded"
+                    >
+                      Add Snacks
+                    </button>
+                    <button onClick={() => navigate('/cart')} className="px-4 py-2 bg-secondary-500 text-white rounded">View Cart ({cartItemsCount})</button>
+                  </div>
+                </div>
               </div>
+
+                
 
               {/* Selected Seats */}
               <div className="border-t border-secondary-400 pt-4">

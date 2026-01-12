@@ -24,6 +24,8 @@ import AddSnacks from './pages/admin/addsnacks';
 import AdminLayout from './pages/admin/AdminLayout';
 import Cinemas from './pages/Cinemas';
 import CinemasManagement from './pages/admin/CinemasManagement';
+import Concession from './pages/concession';
+import Cart from './pages/Cart';
 import { AdminOnlyRoute } from './components/ProtectedRoute';
 import { Navigate } from 'react-router-dom';
 
@@ -52,6 +54,8 @@ function AppContent() {
       <Route path="/movies/:id/edit" element={<AdminOnlyRoute><MovieForm /></AdminOnlyRoute>} />
       <Route path="/movies/:id/showtimes" element={<MovieShowtimes />} />
       <Route path="/showtimes/:id/book" element={<BookShowtime />} />
+      <Route path="/concessions" element={<Concession />} />
+      <Route path="/cart" element={<Cart />} />
 
       {/* Nested admin routes under /admin-dashboard to ensure admin lands in dashboard layout */}
       <Route path="/admin-dashboard" element={<AdminOnlyRoute><AdminLayout /></AdminOnlyRoute>}>
