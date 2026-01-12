@@ -3,6 +3,7 @@ import { API_BASE_URL } from "../utils/api";
 import Navbar from "../components/Navbar";
 import BackButton from "../components/BackButton";
 import LoadingLogo from "../components/LoadingLogo";
+import Modal from "../components/Modal";
 import { AuthContext } from "../context/AuthContext";
 
 export default function MovieShowtimes() {
@@ -10,15 +11,37 @@ export default function MovieShowtimes() {
   const movieId = window.location.pathname.split('/')[2];
   const [movie, setMovie] = useState(null);
   const [showtimes, setShowtimes] = useState([]);
+  const [cinemas, setCinemas] = useState([]);
+  const [selectedCinema, setSelectedCinema] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [showCinemaPicker, setShowCinemaPicker] = useState(false);
+  const [bookingShowtimeId, setBookingShowtimeId] = useState(null);
+  const [tempCinemaSelection, setTempCinemaSelection] = useState("");
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchMovieAndShowtimes();
-  }, [movieId, selectedDate]);
+  }, [movieId, selectedDate, selectedCinema]);
+
+  useEffect(() => {
+    // Fetch cinemas for selector
+    const fetchCinemas = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/cinemas`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = data.data || data;
+        setCinemas(Array.isArray(list) ? list : []);
+      } catch (e) {
+        // ignore errors for now
+      }
+    };
+
+    fetchCinemas();
+  }, []);
 
   const fetchMovieAndShowtimes = async () => {
     try {
@@ -33,21 +56,20 @@ export default function MovieShowtimes() {
       const movieData = await movieResponse.json();
       setMovie(movieData.movie);
 
-      // Fetch showtimes for this movie
+      // Fetch showtimes for this movie (optionally filtered by cinema)
       const queryParams = new URLSearchParams();
       queryParams.append("movieId", movieId);
       if (selectedDate) queryParams.append("date", selectedDate);
+      if (selectedCinema) queryParams.append("cinemaId", selectedCinema);
 
-      const showtimesResponse = await fetch(
-        `${API_BASE_URL}/showtimes/movie/${movieId}?${queryParams}`,
-        {
-          credentials: "include",
-        }
-      );
+      const showtimesResponse = await fetch(`${API_BASE_URL}/showtimes?${queryParams}`, {
+        credentials: "include",
+      });
 
       if (showtimesResponse.ok) {
         const showtimesData = await showtimesResponse.json();
-        setShowtimes(showtimesData.data?.showtimes || []);
+        const list = showtimesData.data?.showtimes || showtimesData.data || showtimesData;
+        setShowtimes(Array.isArray(list) ? list : []);
       }
 
       setError("");
@@ -82,9 +104,38 @@ export default function MovieShowtimes() {
     }
   };
 
-  const handleBookNow = (showtimeId) => {
-    // Navigate to seat selection / booking page
-    window.location.href = `/showtimes/${showtimeId}/book`;
+  const handleBookNow = (showtimeId, showtime = null) => {
+    // If a cinema is already selected globally, use it
+    if (selectedCinema) {
+      const suffix = `?cinemaId=${selectedCinema}`;
+      window.location.href = `/showtimes/${showtimeId}/book${suffix}`;
+      return;
+    }
+
+    // If the showtime itself carries a cinemaId, use it
+    const showtimeCinemaId = showtime?.cinemaId?._id || showtime?.cinemaId;
+    if (showtimeCinemaId) {
+      window.location.href = `/showtimes/${showtimeId}/book?cinemaId=${showtimeCinemaId}`;
+      return;
+    }
+
+    // If only one cinema exists, use it automatically
+    if (cinemas.length === 1) {
+      window.location.href = `/showtimes/${showtimeId}/book?cinemaId=${cinemas[0]._id}`;
+      return;
+    }
+
+    // Otherwise prompt the user to choose a cinema before booking
+    setBookingShowtimeId(showtimeId);
+    setTempCinemaSelection("");
+    setShowCinemaPicker(true);
+  };
+
+  const confirmCinemaAndBook = () => {
+    if (!bookingShowtimeId) return setShowCinemaPicker(false);
+    const suffix = tempCinemaSelection ? `?cinemaId=${tempCinemaSelection}` : "";
+    window.location.href = `/showtimes/${bookingShowtimeId}/book${suffix}`;
+    setShowCinemaPicker(false);
   };
 
   if (loading) {
@@ -182,6 +233,18 @@ export default function MovieShowtimes() {
             </h2>
 
             <div className="flex items-center gap-4">
+              <label className="text-text-secondary">Cinema:</label>
+              <select
+                value={selectedCinema}
+                onChange={(e) => setSelectedCinema(e.target.value)}
+                className="px-3 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+              >
+                <option value="">All cinemas</option>
+                {cinemas.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}{c.city ? ` - ${c.city}` : ''}</option>
+                ))}
+              </select>
+
               <label className="text-text-secondary">Filter by date:</label>
               <input
                 type="date"
@@ -264,7 +327,7 @@ export default function MovieShowtimes() {
                       {formatCurrency(showtime.price)}
                     </div>
                     <button
-                      onClick={() => handleBookNow(showtime._id)}
+                      onClick={() => handleBookNow(showtime._id, showtime)}
                       disabled={
                         showtime.status !== "scheduled" ||
                         showtime.seatsAvailable === 0
@@ -285,6 +348,30 @@ export default function MovieShowtimes() {
           )}
         </div>
       </div>
+
+      {/* Cinema picker modal shown when user tries to book without a selected cinema */}
+      <Modal
+        isOpen={showCinemaPicker}
+        title="Choose Cinema"
+        onClose={() => setShowCinemaPicker(false)}
+        onConfirm={confirmCinemaAndBook}
+        confirmText="Book"
+      >
+        <div className="mb-4 text-text-secondary">Please choose a cinema to continue booking.</div>
+        <div>
+          <select
+            value={tempCinemaSelection}
+            onChange={(e) => setTempCinemaSelection(e.target.value)}
+            className="w-full px-3 py-2 bg-surface-500 border border-surface-400 rounded-lg"
+          >
+            <option value="">Select a cinema</option>
+            {cinemas.map((c) => (
+              <option key={c._id} value={c._id}>{c.name}{c.city ? ` - ${c.city}` : ''}</option>
+            ))}
+          </select>
+        </div>
+      </Modal>
+
     </div>
   );
 }

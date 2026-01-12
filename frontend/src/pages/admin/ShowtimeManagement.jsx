@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/api";
 import Modal from "../../components/Modal";
@@ -11,12 +11,16 @@ export default function ShowtimeManagement() {
   const [showtimes, setShowtimes] = useState([]);
   const [movies, setMovies] = useState([]);
   const [halls, setHalls] = useState([]);
+  const [cinemas, setCinemas] = useState([]);
+  const [modalHalls, setModalHalls] = useState([]);
+  const [hallCapacityPlaceholder, setHallCapacityPlaceholder] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Filter states
   const location = useLocation();
+  const navigate = useNavigate();
   // Initialize filters from query params (allows linking from AdminDashboard)
   const query = new URLSearchParams(location.search);
   const [filters, setFilters] = useState({
@@ -39,15 +43,37 @@ export default function ShowtimeManagement() {
     startTime: "",
     price: "",
     totalSeats: "",
+    cinemaId: "",
+    cinemaIds: [],
+    hallIds: [],
   });
-  const [hallCapacityPlaceholder, setHallCapacityPlaceholder] = useState('');
 
   // Fetch initial data
   useEffect(() => {
     fetchShowtimes();
     fetchMovies();
     fetchHalls();
+    fetchCinemas();
   }, [filters.date, filters.movieId, filters.hallId, filters.status]);
+
+  // Fetch halls for multiple cinema ids (used by modal multi-select)
+  const fetchHallsByCinemaIds = async (cinemaIds = []) => {
+    try {
+      if (!Array.isArray(cinemaIds) || cinemaIds.length === 0) {
+        setModalHalls([]);
+        return;
+      }
+      const q = cinemaIds.join(',');
+      const response = await fetch(`${API_BASE_URL}/halls?cinemaIds=${encodeURIComponent(q)}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        const list = data.data || data;
+        setModalHalls(Array.isArray(list) ? list : []);
+      }
+    } catch (_err) {
+      console.error('Failed to fetch halls for cinemas:', _err);
+    }
+  };
 
   const fetchShowtimes = async () => {
     try {
@@ -67,8 +93,8 @@ export default function ShowtimeManagement() {
       const data = await response.json();
       setShowtimes(data.data || []);
       setError("");
-    } catch (err) {
-      setError("Failed to load showtimes: " + err.message);
+    } catch (_err) {
+      setError("Failed to load showtimes: " + _err.message);
     } finally {
       setLoading(false);
     }
@@ -83,8 +109,24 @@ export default function ShowtimeManagement() {
         const data = await response.json();
         setMovies(data.movies || []);
       }
-    } catch (err) {
-      console.error("Failed to fetch movies:", err);
+    } catch (_err) {
+      console.error("Failed to fetch movies:", _err);
+    }
+  };
+
+  const fetchCinemas = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/cinemas`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // backend may return { data: [...] } or { cinemas: [...] } or raw array
+        const list = data.data || data.cinemas || data;
+        setCinemas(Array.isArray(list) ? list : []);
+      }
+    } catch (_err) {
+      console.error('Failed to fetch cinemas:', _err);
     }
   };
 
@@ -107,8 +149,8 @@ export default function ShowtimeManagement() {
           setHalls([]);
         }
       }
-    } catch (err) {
-      console.error("Failed to fetch halls:", err);
+    } catch (_err) {
+      console.error("Failed to fetch halls:", _err);
     }
   };
 
@@ -119,6 +161,22 @@ export default function ShowtimeManagement() {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
+    // Multi-select cinemas -> store as array and fetch halls
+    if (name === 'cinemaIds') {
+      const options = Array.from(e.target.selectedOptions || []);
+      const ids = options.map(o => o.value);
+      setFormData((prev) => ({ ...prev, cinemaIds: ids }));
+      fetchHallsByCinemaIds(ids);
+      return;
+    }
+
+    // Multi-select halls
+    if (name === 'hallIds') {
+      const options = Array.from(e.target.selectedOptions || []);
+      const ids = options.map(o => o.value);
+      setFormData((prev) => ({ ...prev, hallIds: ids }));
+      return;
+    }
     // If hall changed, populate totalSeats from selected hall capacity
     if (name === 'hallId') {
       const selectedHall = halls.find(h => h._id === value);
@@ -148,7 +206,7 @@ export default function ShowtimeManagement() {
     try {
       const num = Number(amount) || 0;
       return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(num);
-    } catch (err) {
+    } catch (_err) {
       return `Rs ${Number(amount || 0).toFixed(2)}`;
     }
   };
@@ -161,74 +219,106 @@ export default function ShowtimeManagement() {
     return localISO;
   };
 
+  // Helper: return selected hall objects based on formData.hallIds or hallId
+  const getSelectedHalls = () => {
+    const ids = Array.isArray(formData.hallIds)
+      ? formData.hallIds
+      : formData.hallId
+      ? [formData.hallId]
+      : [];
+    return ids
+      .map((id) => modalHalls.find((h) => String(h._id) === String(id)) || halls.find((h) => String(h._id) === String(id)))
+      .filter(Boolean);
+  };
+
   const handleCreateShowtime = async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      // Prepare payload: ensure required fields and coerce types
-      const payload = { ...formData };
-      // Basic validation
-      if (!payload.movieId || !payload.hallId || !payload.startTime) {
-        setError('Please select a movie, hall and start time');
+      const payloadBase = { ...formData };
+      if (!payloadBase.movieId || !payloadBase.startTime) {
+        setError('Please select a movie and start time');
         return;
       }
 
-      // Normalize startTime to ISO (treat datetime-local as local time)
-      try {
-        payload.startTime = new Date(payload.startTime).toISOString();
-      } catch (err) {
-        setError('Invalid start time format');
+      const hallIds = Array.isArray(payloadBase.hallIds)
+        ? payloadBase.hallIds
+        : payloadBase.hallId
+        ? [payloadBase.hallId]
+        : [];
+
+      if (hallIds.length === 0) {
+        setError('Please select at least one hall');
         return;
       }
 
-      // Coerce numeric fields
-      payload.price = parseFloat(payload.price) || 0;
+      const created = [];
+      const errors = [];
 
-      // Ensure totalSeats: if empty use selected hall capacity
-      if (!payload.totalSeats || Number(payload.totalSeats) <= 0) {
-        const selectedHall = halls.find(h => h._id === payload.hallId);
-        let capacity = null;
-        if (selectedHall) {
-          if (typeof selectedHall.totalSeats === 'number' && selectedHall.totalSeats > 0) capacity = selectedHall.totalSeats;
-          else if (selectedHall.layout) {
-            if (Array.isArray(selectedHall.layout.seats) && selectedHall.layout.seats.length > 0) capacity = selectedHall.layout.seats.length;
-            else if (selectedHall.layout.rows && selectedHall.layout.cols) capacity = Number(selectedHall.layout.rows) * Number(selectedHall.layout.cols);
+      for (const hallId of hallIds) {
+        try {
+          const payload = { ...payloadBase };
+          payload.hallId = hallId;
+
+          // Infer cinemaId from selected halls if available
+          const hallObj = modalHalls.find(h => String(h._id) === String(hallId)) || halls.find(h => String(h._id) === String(hallId));
+          if (hallObj && hallObj.cinemaId) {
+            payload.cinemaId = hallObj.cinemaId._id || hallObj.cinemaId;
           }
+
+          // Normalize startTime
+          try {
+            payload.startTime = new Date(payload.startTime).toISOString();
+          } catch (_err) {
+            // continue and let backend validate
+          }
+
+          // Ensure totalSeats if missing: try to infer from hall
+          if (!payload.totalSeats || Number(payload.totalSeats) <= 0) {
+            let capacity = null;
+            if (hallObj) {
+              if (typeof hallObj.totalSeats === 'number' && hallObj.totalSeats > 0) capacity = hallObj.totalSeats;
+              else if (hallObj.layout) {
+                if (Array.isArray(hallObj.layout.seats) && hallObj.layout.seats.length > 0) capacity = hallObj.layout.seats.length;
+                else if (hallObj.layout.rows && hallObj.layout.cols) capacity = Number(hallObj.layout.rows) * Number(hallObj.layout.cols);
+              }
+            }
+            if (capacity) payload.totalSeats = capacity;
+          }
+
+          payload.price = parseFloat(payload.price) || 0;
+          payload.totalSeats = Number(payload.totalSeats);
+
+          const response = await fetch(`${API_BASE_URL}/showtimes`, {
+            method: "POST",
+            headers,
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            errors.push({ hallId, message: data.message || 'Failed to create' });
+          } else {
+            created.push(data.data || data);
+          }
+        } catch (_err) {
+          errors.push({ hallId, message: _err.message });
         }
-        if (capacity) payload.totalSeats = capacity;
-        else {
-          setError('Total seats missing and cannot be inferred from selected hall');
-          return;
-        }
-      } else {
-        payload.totalSeats = Number(payload.totalSeats);
       }
 
-      const response = await fetch(`${API_BASE_URL}/showtimes`, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      if (created.length > 0) setSuccess(`Created ${created.length} showtime${created.length > 1 ? 's' : ''}`);
+      if (errors.length > 0) setError(`Failed for ${errors.length} hall${errors.length > 1 ? 's' : ''}: ${errors.map(e => e.message).join('; ')}`);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create showtime");
-      }
-
-      setSuccess("Showtime created successfully!");
       setShowCreateModal(false);
       resetForm();
       fetchShowtimes();
-
-      // Auto-clear success message
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.message);
+    } catch (_err) {
+      setError(_err.message);
     }
   };
 
@@ -250,7 +340,7 @@ export default function ShowtimeManagement() {
       // Normalize startTime to ISO for update as well
       try {
         payload.startTime = new Date(payload.startTime).toISOString();
-      } catch (err) {
+      } catch (_err) {
         setError('Invalid start time format');
         return;
       }
@@ -296,8 +386,8 @@ export default function ShowtimeManagement() {
       fetchShowtimes();
 
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.message);
+    } catch (_err) {
+      setError(_err.message);
     }
   };
 
@@ -329,8 +419,8 @@ export default function ShowtimeManagement() {
       fetchShowtimes();
 
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.message);
+    } catch (_err) {
+      setError(_err.message);
     }
   };
 
@@ -358,8 +448,8 @@ export default function ShowtimeManagement() {
       fetchShowtimes();
 
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err.message);
+    } catch (_err) {
+      setError(_err.message);
     }
   };
 
@@ -370,17 +460,19 @@ export default function ShowtimeManagement() {
       startTime: "",
       price: "",
       totalSeats: "",
+      cinemaId: "",
+      cinemaIds: [],
+      hallIds: [],
     });
   };
 
   const openCreateModal = (preselectedMovieId = null) => {
+    // Navigate to the standalone create-showtime page instead of opening modal
     resetForm();
-    // If this was called from a click handler without an id, ignore the event object
-    if (preselectedMovieId && typeof preselectedMovieId === 'string') {
-      setFormData(prev => ({ ...prev, movieId: preselectedMovieId }));
-    }
-    setShowCreateModal(true);
-    setError("");
+    const url = preselectedMovieId && typeof preselectedMovieId === 'string'
+      ? `/admin-dashboard/showtime-management/new?movieId=${preselectedMovieId}`
+      : '/admin-dashboard/showtime-management/new';
+    navigate(url);
   };
 
   const openEditModal = (showtime) => {
@@ -388,6 +480,7 @@ export default function ShowtimeManagement() {
     setFormData({
       movieId: showtime.movieId?._id || showtime.movieId,
       hallId: showtime.hallId?._id || showtime.hallId,
+      cinemaId: showtime.cinemaId?._id || showtime.cinemaId || '',
       startTime: showtime.startTime
         ? new Date(showtime.startTime).toISOString().slice(0, 16)
         : "",
@@ -417,7 +510,7 @@ export default function ShowtimeManagement() {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (error) {
+    } catch {
       return 'Invalid Date';
     }
   };
@@ -546,11 +639,11 @@ export default function ShowtimeManagement() {
                 className="w-full px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
               >
                 <option value="">All Halls</option>
-                {halls.map((hall) => (
-                  <option key={hall._id} value={hall._id}>
-                    {hall.name}
-                  </option>
-                ))}
+                  {(Array.isArray(halls) ? halls : []).map((hall) => (
+                    <option key={hall._id} value={hall._id}>
+                      {hall.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -751,7 +844,7 @@ export default function ShowtimeManagement() {
         confirmText="Create Showtime"
         confirmDisabled={
           !formData.movieId ||
-          !formData.hallId ||
+          !(Array.isArray(formData.hallIds) ? formData.hallIds.length > 0 : !!formData.hallId) ||
           !formData.startTime ||
           !formData.price ||
           !formData.totalSeats
@@ -769,7 +862,7 @@ export default function ShowtimeManagement() {
             No movies found. Create a movie first in the <a href="/movies/new" className="text-accent-magenta underline">Add Movie</a> page.
           </div>
         )}
-        {halls.length === 0 && (
+        {((!Array.isArray(halls) || halls.length === 0) && (!Array.isArray(modalHalls) || modalHalls.length === 0)) && (
           <div className="mb-4 p-3 bg-yellow-600/10 border border-yellow-600/20 text-yellow-300 rounded-lg text-sm">
             No halls found. Add a hall in the <a href="/halls" className="text-accent-magenta underline">Halls</a> admin section before scheduling.
           </div>
@@ -796,23 +889,78 @@ export default function ShowtimeManagement() {
             </select>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Cinema
+              </label>
+              <select
+                name="cinemaId"
+                value={formData.cinemaId}
+                onChange={handleFormChange}
+                className="w-full px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+              >
+                <option value="">Select a cinema (optional)</option>
+                {cinemas.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}{c.city ? ` - ${c.city}` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Hall * (multi-select)
+              </label>
+              <select
+                name="hallIds"
+                value={formData.hallIds || []}
+                onChange={handleFormChange}
+                multiple
+                required
+                className="w-full h-32 px-2 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+              >
+                {modalHalls.length > 0 ? (
+                  modalHalls.map((hall) => (
+                    <option key={hall._id} value={hall._id}>
+                      {hall.name} ({hall.totalSeats || (hall.layout?.rows && hall.layout?.cols ? `${hall.layout.rows * hall.layout.cols}` : '0')} seats) {hall.cinemaId ? `- ${hall.cinemaId.name || ''}` : ''}
+                    </option>
+                  ))
+                ) : (
+                  halls.map((hall) => (
+                    <option key={hall._id} value={hall._id}>
+                      {hall.name} ({hall.totalSeats || (hall.layout?.rows && hall.layout?.cols ? `${hall.layout.rows * hall.layout.cols}` : '0')} seats)
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-2">
               Hall *
             </label>
             <select
-              name="hallId"
-              value={formData.hallId}
+              name="hallIds"
+              value={formData.hallIds || []}
               onChange={handleFormChange}
+              multiple
               required
-              className="w-full px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+              className="w-full h-32 px-2 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
             >
-              <option value="">Select a hall</option>
-              {halls.map((hall) => (
+              {modalHalls.length > 0 ? (
+                modalHalls.map((hall) => (
+                  <option key={hall._id} value={hall._id}>
+                    {hall.name} ({hall.totalSeats || (hall.layout?.rows && hall.layout?.cols ? `${hall.layout.rows * hall.layout.cols}` : '0')} seats) {hall.cinemaId ? `- ${hall.cinemaId.name || ''}` : ''}
+                  </option>
+                ))
+              ) : (
+                halls.map((hall) => (
                   <option key={hall._id} value={hall._id}>
                     {hall.name} ({hall.totalSeats || (hall.layout?.rows && hall.layout?.cols ? `${hall.layout.rows * hall.layout.cols}` : '0')} seats)
                   </option>
-                ))}
+                ))
+              )}
             </select>
           </div>
 
@@ -830,6 +978,27 @@ export default function ShowtimeManagement() {
               className="w-full px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
             />
           </div>
+
+          {/* Selected halls summary and total seats */}
+          {getSelectedHalls().length > 0 && (
+            <div className="p-3 bg-surface-500 rounded border border-surface-400/30">
+              <div className="text-sm text-text-secondary mb-2">Selected halls</div>
+              <div className="flex flex-col gap-2">
+                {getSelectedHalls().map((h) => {
+                  const seats = h.totalSeats || (h.layout?.rows && h.layout?.cols ? Number(h.layout.rows) * Number(h.layout.cols) : (Array.isArray(h.layout?.seats) ? h.layout.seats.length : 0));
+                  return (
+                    <div key={h._id} className="flex justify-between text-sm">
+                      <div className="font-medium">{h.name}</div>
+                      <div className="text-text-secondary">{seats} seats</div>
+                    </div>
+                  );
+                })}
+                <div className="text-sm font-semibold pt-2 border-t border-surface-400/20">
+                  Total seats: {getSelectedHalls().reduce((s, h) => s + (h.totalSeats || (h.layout?.rows && h.layout?.cols ? Number(h.layout.rows) * Number(h.layout.cols) : (Array.isArray(h.layout?.seats) ? h.layout.seats.length : 0))), 0)}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -922,11 +1091,11 @@ export default function ShowtimeManagement() {
               className="w-full px-4 py-2 bg-surface-500 border border-surface-400 rounded-lg focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
             >
               <option value="">Select a hall</option>
-              {halls.map((hall) => (
-                <option key={hall._id} value={hall._id}>
-                  {hall.name} ({hall.capacity} seats)
-                </option>
-              ))}
+                {(Array.isArray(halls) ? halls : []).map((hall) => (
+                  <option key={hall._id} value={hall._id}>
+                    {hall.name} ({hall.capacity} seats)
+                  </option>
+                ))}
             </select>
           </div>
 

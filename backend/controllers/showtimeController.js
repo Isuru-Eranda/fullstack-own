@@ -1,6 +1,8 @@
 const Showtime = require("../models/Showtime");
 const Movie = require("../models/Movie");
 const Hall = require("../models/Hall");
+const Cinema = require("../models/Cinema");
+const mongoose = require("mongoose");
 
 // Utility function to validate time range
 const isValidTimeRange = (start, end) => {
@@ -26,6 +28,7 @@ exports.createShowtime = async (req, res) => {
   console.log('⏺️ CreateShowtime called. body=', JSON.stringify(req.body));
   try {
     const { movieId, hallId, startTime, price, totalSeats } = req.body;
+    const { cinemaId } = req.body;
 
     // Validate required fields
     const missingFields = [];
@@ -100,6 +103,19 @@ exports.createShowtime = async (req, res) => {
       });
     }
 
+    // Validate cinema if provided
+    let cinema = null;
+    if (cinemaId) {
+      cinema = await Cinema.findById(cinemaId);
+      if (!cinema) {
+        return res.status(404).json({
+          success: false,
+          message: "Cinema not found",
+          code: "CINEMA_NOT_FOUND",
+        });
+      }
+    }
+
     // Validate hall capacity
     if (totalSeats > hall.capacity) {
       return res.status(400).json({
@@ -135,6 +151,7 @@ exports.createShowtime = async (req, res) => {
     const showtime = await Showtime.create({
       movieId,
       hallId,
+      cinemaId: cinema?._id || undefined,
       startTime: parsedStartTime,
       endTime,
       date: parsedStartTime,
@@ -147,6 +164,7 @@ exports.createShowtime = async (req, res) => {
     const populatedShowtime = await Showtime.findById(showtime._id)
       .populate("movieId", "title duration posterImage genre language rating")
       .populate("hallId", "name capacity rows columns");
+      populatedShowtime && (await populatedShowtime.populate("cinemaId", "name city"));
 
     res.status(201).json({
       success: true,
@@ -242,6 +260,34 @@ exports.getAllShowtimes = async (req, res) => {
       query.movieId = movieId;
     }
 
+    // Filter by cinema (find halls that belong to the cinema)
+    if (req.query.cinemaId) {
+      const cinemaId = req.query.cinemaId;
+
+      // Try to find halls that reference the cinema in common fields
+      let halls = await Hall.find({ $or: [{ cinema: cinemaId }, { cinemaId: cinemaId }] }).select("_id name");
+
+      // Fallback: if no halls found, try fuzzy match by cinema name
+      if ((!halls || halls.length === 0) && mongoose && cinemaId) {
+        try {
+          const cinema = await Cinema.findById(cinemaId);
+          if (cinema && cinema.name) {
+            const firstWord = cinema.name.split(/\s+/)[0];
+            halls = await Hall.find({ name: { $regex: firstWord, $options: 'i' } }).select("_id name");
+          }
+        } catch (e) {
+          // ignore and continue without hall filter
+        }
+      }
+
+      if (halls && halls.length > 0) {
+        query.hallId = { $in: halls.map((h) => h._id) };
+      } else {
+        // If no halls discovered, set a filter that returns no results to indicate none
+        query.hallId = { $in: [] };
+      }
+    }
+
     // Filter by hall
     if (hallId) {
       query.hallId = hallId;
@@ -266,6 +312,7 @@ exports.getAllShowtimes = async (req, res) => {
       Showtime.find(query)
         .populate("movieId", "title duration posterImage genre language")
         .populate("hallId", "name capacity")
+        .populate("cinemaId", "name city")
         .sort(sort)
         .limit(limitNum)
         .skip(skip)
@@ -318,7 +365,8 @@ exports.getShowtimeById = async (req, res) => {
   try {
     const showtime = await Showtime.findById(req.params.id)
       .populate("movieId")
-      .populate("hallId");
+      .populate("hallId")
+      .populate("cinemaId", "name city");
 
     if (!showtime) {
       return res.status(404).json({
@@ -496,6 +544,18 @@ exports.updateShowtime = async (req, res) => {
       updates.date = newStartTime;
     }
 
+    // Validate cinema update if provided
+    if (updates.cinemaId) {
+      const newCinema = await Cinema.findById(updates.cinemaId);
+      if (!newCinema) {
+        return res.status(404).json({
+          success: false,
+          message: "Cinema not found",
+          code: "CINEMA_NOT_FOUND",
+        });
+      }
+    }
+
     // Apply updates
     Object.keys(updates).forEach((key) => {
       existingShowtime[key] = updates[key];
@@ -507,7 +567,8 @@ exports.updateShowtime = async (req, res) => {
     // Get populated result
     const updatedShowtime = await Showtime.findById(id)
       .populate("movieId", "title duration posterImage")
-      .populate("hallId", "name capacity");
+      .populate("hallId", "name capacity")
+      .populate("cinemaId", "name city");
 
     res.status(200).json({
       success: true,
@@ -687,6 +748,7 @@ exports.getShowtimesByMovie = async (req, res) => {
 
     const showtimes = await Showtime.find(query)
       .populate("hallId", "name capacity rows columns amenities")
+      .populate("cinemaId", "name city")
       .sort({ startTime: 1 })
       .lean();
 

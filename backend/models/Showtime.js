@@ -13,6 +13,11 @@ const showtimeSchema = new mongoose.Schema({
     required: [true, "Hall ID is required"],
     index: true,
   },
+  cinemaId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Cinema",
+    index: true,
+  },
   startTime: {
     type: Date,
     required: [true, "Start time is required"],

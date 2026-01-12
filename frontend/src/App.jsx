@@ -17,6 +17,7 @@ import HallsList from './pages/admin/HallsList';
 import HallForm from './pages/admin/HallForm';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ShowtimeManagement from './pages/admin/ShowtimeManagement';
+import CreateShowtime from './pages/admin/CreateShowtime';
 import UserManagement from './pages/admin/UserManagement';
 import ConcessionManagement from './pages/admin/concessionmanagement';
 import AddSnacks from './pages/admin/addsnacks';
@@ -59,6 +60,7 @@ function AppContent() {
         <Route path="halls/:id" element={<HallForm />} />
         <Route path="cinemas" element={<CinemasManagement />} />
         <Route path="showtime-management" element={<ShowtimeManagement />} />
+        <Route path="showtime-management/new" element={<AdminOnlyRoute><CreateShowtime /></AdminOnlyRoute>} />
         <Route path="user-management" element={<UserManagement />} />
         <Route path="concession-management" element={<ConcessionManagement />} />
         <Route path="addsnack" element={<AddSnacks />} />

@@ -18,6 +18,11 @@ const seatSchema = new mongoose.Schema(
 
 const hallSchema = new mongoose.Schema(
   {
+    cinemaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Cinema',
+      index: true,
+    },
     name: {
       type: String,
       required: [true, 'Hall name is required'],

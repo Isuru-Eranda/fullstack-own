@@ -10,10 +10,13 @@ import { API_BASE_URL } from '../utils/api';
 
 export default function BookShowtime() {
   const showtimeId = window.location.pathname.split('/')[2];
+  const urlParams = new URLSearchParams(window.location.search);
+  const cinemaQueryId = urlParams.get('cinemaId') || '';
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [showtime, setShowtime] = useState(null);
+  const [cinema, setCinema] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedAdult, setSelectedAdult] = useState(1);
   const [selectedChild, setSelectedChild] = useState(0);
@@ -22,6 +25,32 @@ export default function BookShowtime() {
   useEffect(() => {
     fetchShowtime();
   }, [showtimeId]);
+
+  useEffect(() => {
+    const fetchCinema = async () => {
+      if (!cinemaQueryId) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/cinemas/${cinemaQueryId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCinema(data.data || data);
+          return;
+        }
+        // Fallback: if individual endpoint not available, fetch list and find
+        const listRes = await fetch(`${API_BASE_URL}/cinemas`);
+        if (!listRes.ok) return;
+        const listData = await listRes.json();
+        const list = listData.data || listData.cinemas || listData;
+        if (Array.isArray(list)) {
+          const found = list.find(c => String(c._id) === String(cinemaQueryId));
+          if (found) setCinema(found);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchCinema();
+  }, [cinemaQueryId]);
 
   const fetchShowtime = async () => {
     try {
@@ -116,7 +145,7 @@ export default function BookShowtime() {
               <h1 className="text-2xl font-bold mb-2">{showtime.movieId?.title || 'Movie'}</h1>
               <div className="text-text-secondary space-y-1">
                 <p>🏛️ Hall: {showtime.hallId?.name || 'N/A'}</p>
-                <p>🎬 Cinema: {showtime.cinemaId?.name || 'N/A'}</p>
+                <p>🎬 Cinema: {cinema?.name || showtime.cinemaId?.name || 'N/A'}</p>
                 <p>📅 {new Date(showtime.startTime).toLocaleString()}</p>
                 <p>💰 {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(Number(showtime.price))} per ticket</p>
               </div>

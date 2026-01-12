@@ -68,7 +68,14 @@ exports.createHall = async (req, res) => {
 // @access  Public
 exports.getAllHalls = async (req, res) => {
   try {
-    const halls = await Hall.find().sort({ createdAt: -1 });
+    const { cinemaId, cinemaIds } = req.query;
+    const query = {};
+    if (cinemaId) query.cinemaId = cinemaId;
+    if (cinemaIds) {
+      const arr = String(cinemaIds).split(',').map((s) => s.trim()).filter(Boolean);
+      if (arr.length) query.cinemaId = { $in: arr };
+    }
+    const halls = await Hall.find(query).sort({ createdAt: -1 });
     res.json(halls);
   } catch (error) {
     console.error('Get halls error:', error);
