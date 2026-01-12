@@ -1,14 +1,47 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 import SnackImageSlider from "../components/snackimageslider";
 import Navbar from "../components/Navbar";
 import BackButton from "../components/BackButton";
 
 export default function SnackOverviewPage() {
     const params = useParams();
+    const navigate = useNavigate();
     const [snack, setSnack] = useState(null);
     const [status, setStatus] = useState('loading');
+
+    // Cart management functions
+    const getCart = () => {
+        const cart = localStorage.getItem('cart');
+        return cart ? JSON.parse(cart) : [];
+    };
+
+    const addToCart = (product, quantity) => {
+        const cart = getCart();
+        const existingItem = cart.find(item => item._id === product._id);
+        
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({ ...product, quantity });
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+    };
+
+    const handleAddToCart = () => {
+        addToCart(snack, 1);
+        toast.success("Product added to cart");
+        console.log(getCart());
+        navigate('/cart');
+    };
+
+    const handleBuyNow = () => {
+        addToCart(snack, 1);
+        navigate('/checkout', { state: { items: getCart() } });
+    };
 
     useEffect(() => {
         if (status === 'loading') {
@@ -71,10 +104,14 @@ export default function SnackOverviewPage() {
                 </div>
                
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-6 w-full">
-                    <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 lg:py-3 lg:px-8 rounded-lg transition-colors text-sm sm:text-base lg:text-lg w-full sm:w-auto">
+                    <button 
+                        onClick={handleAddToCart}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 lg:py-3 lg:px-8 rounded-lg transition-colors text-sm sm:text-base lg:text-lg w-full sm:w-auto">
                         Add to Cart
                     </button>
-                    <button className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 lg:py-3 lg:px-8 rounded-lg transition-colors text-sm sm:text-base lg:text-lg w-full sm:w-auto">
+                    <button 
+                        onClick={handleBuyNow}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 lg:py-3 lg:px-8 rounded-lg transition-colors text-sm sm:text-base lg:text-lg w-full sm:w-auto">
                         Buy Now
                     </button>
                 </div>
