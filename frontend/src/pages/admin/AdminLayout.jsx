@@ -55,6 +55,7 @@ export default function AdminLayout() {
           <aside className="col-span-1 bg-surface-600 rounded-xl p-4 border border-surface-400/30 flex flex-col justify-between">
             <nav className="space-y-2">
               <a href="/admin-dashboard" className="block px-3 py-2 rounded hover:bg-surface-500">Overview</a>
+              <a href="/admin-dashboard/cinemas" className="block px-3 py-2 rounded hover:bg-surface-500">Cinemas</a>
               <a href="/admin-dashboard/halls" className="block px-3 py-2 rounded hover:bg-surface-500">Halls</a>
               <a href="/admin-dashboard/showtime-management" className="block px-3 py-2 rounded hover:bg-surface-500">Showtimes</a>
               <a href="/admin-dashboard/user-management" className="block px-3 py-2 rounded hover:bg-surface-500">Users</a>

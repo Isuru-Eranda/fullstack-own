@@ -25,6 +25,7 @@ import OrderManagement from './pages/admin/OrderManagement';
 import AdminLayout from './pages/admin/AdminLayout';
 import Cinemas from './pages/Cinemas';
 import CinemasManagement from './pages/admin/CinemasManagement';
+import EditCinema from './pages/admin/EditCinema';
 import Snacks from './pages/snacks';
 import Cart from './pages/Cart';
 import Receipt from './pages/Receipt';
@@ -69,6 +70,7 @@ function AppContent() {
         <Route path="halls" element={<HallsList />} />
         <Route path="halls/:id" element={<HallForm />} />
         <Route path="cinemas" element={<CinemasManagement />} />
+        <Route path="cinemas/:id/edit" element={<EditCinema />} />
         <Route path="showtime-management" element={<ShowtimeManagement />} />
         <Route path="showtime-management/new" element={<AdminOnlyRoute><CreateShowtime /></AdminOnlyRoute>} />
         <Route path="user-management" element={<UserManagement />} />

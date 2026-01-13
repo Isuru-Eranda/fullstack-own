@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [showtimesCount, setShowtimesCount] = useState(0);
   const [usersCount, setUsersCount] = useState(0);
   const [snacksCount, setSnacksCount] = useState(0);
+  const [cinemasCount, setCinemasCount] = useState(0);
 
   // Showtime create state
   const [showCreateShowtimeModal, setShowCreateShowtimeModal] = useState(false);
@@ -96,8 +97,9 @@ export default function AdminDashboard() {
       const showtimesReq = fetch(`${API_BASE_URL}/showtimes?status=scheduled&limit=1`, { credentials: 'include' });
       const usersReq = fetch(`${API_BASE_URL}/auth/users?limit=1`, { credentials: 'include' });
       const snacksReq = fetch(`${API_BASE_URL}/snacks?limit=1`, { credentials: 'include' });
+      const cinemasReq = fetch(`${API_BASE_URL}/cinemas`, { credentials: 'include' });
 
-      const [sres, ures, nres] = await Promise.all([showtimesReq, usersReq, snacksReq]);
+      const [sres, ures, nres, cres] = await Promise.all([showtimesReq, usersReq, snacksReq, cinemasReq]);
 
       if (sres.ok) {
         const sdata = await sres.json();
@@ -111,7 +113,12 @@ export default function AdminDashboard() {
 
       if (nres.ok) {
         const ndata = await nres.json();
-        setSnacksCount(ndata.pagination?.total ?? (Array.isArray(ndata.data) ? ndata.data.length : (Array.isArray(ndata) ? ndata.length : 0)));
+        setSnacksCount(Array.isArray(ndata.snacks) ? ndata.snacks.length : 0);
+      }
+
+      if (cres.ok) {
+        const cdata = await cres.json();
+        setCinemasCount(Array.isArray(cdata.data) ? cdata.data.length : (Array.isArray(cdata) ? cdata.length : 0));
       }
     } catch (err) {
       console.warn('Failed to fetch summary counts', err);
@@ -175,10 +182,14 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-min">
               {/* Summary cards */}
-              <div className="col-span-1 md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-2">
+              <div className="col-span-1 md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-2">
                 <div className="bg-surface-500 p-4 rounded-xl border border-secondary-400/40">
                   <div className="text-sm text-text-secondary">Movies</div>
                   <div className="text-2xl font-bold">{moviesOverview.length}</div>
+                </div>
+                <div className="bg-surface-500 p-4 rounded-xl border border-secondary-400/40">
+                  <div className="text-sm text-text-secondary">Cinemas</div>
+                  <div className="text-2xl font-bold">{cinemasCount}</div>
                 </div>
                 <div className="bg-surface-500 p-4 rounded-xl border border-secondary-400/40">
                   <div className="text-sm text-text-secondary">Halls</div>

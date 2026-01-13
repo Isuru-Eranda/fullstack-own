@@ -11,4 +11,10 @@ router.get('/', cinemaController.listCinemas);
 // Use field name 'image' for upload
 router.post('/', uploadSingle('image'), cinemaController.createCinema);
 
+// Update cinema
+router.put('/:id', uploadSingle('image'), cinemaController.updateCinema);
+
+// Delete cinema
+router.delete('/:id', cinemaController.deleteCinema);
+
 module.exports = router;

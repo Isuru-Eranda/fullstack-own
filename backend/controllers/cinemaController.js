@@ -31,4 +31,44 @@ exports.listCinemas = async (req, res) => {
   }
 };
 
+// Update cinema
+exports.updateCinema = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, city, address, description } = req.body;
+
+    let updateData = { name, city, address, description };
+
+    if (req.file && req.file.filename) {
+      updateData.image = `/uploads/movies/${req.file.filename}`;
+    }
+
+    const cinema = await Cinema.findByIdAndUpdate(id, updateData, { new: true });
+    if (!cinema) {
+      return res.status(404).json({ message: 'Cinema not found' });
+    }
+
+    res.status(200).json({ message: 'Cinema updated successfully', cinema });
+  } catch (err) {
+    console.error('updateCinema error', err);
+    res.status(500).json({ message: 'Failed to update cinema' });
+  }
+};
+
+// Delete cinema
+exports.deleteCinema = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cinema = await Cinema.findByIdAndDelete(id);
+    if (!cinema) {
+      return res.status(404).json({ message: 'Cinema not found' });
+    }
+
+    res.status(200).json({ message: 'Cinema deleted successfully' });
+  } catch (err) {
+    console.error('deleteCinema error', err);
+    res.status(500).json({ message: 'Failed to delete cinema' });
+  }
+};
+
 module.exports = exports;
