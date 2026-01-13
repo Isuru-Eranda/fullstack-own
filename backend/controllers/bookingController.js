@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
+const Order = require('../models/Order');
+const Purchase = require('../models/Purchase');
+const Snack = require('../models/Snack');
 
 // Create a booking (protected)
 exports.createBooking = async (req, res) => {
@@ -113,10 +116,34 @@ exports.cancelBooking = async (req, res) => {
     booking.canceled = true;
     await booking.save({ session });
 
+    // Find the order containing this booking and cancel associated purchase
+    const order = await Order.findOne({ 
+      userId: req.user._id, 
+      bookings: bookingId 
+    }).session(session);
+
+    if (order && order.purchase) {
+      const purchase = await Purchase.findById(order.purchase).session(session);
+      if (purchase && !purchase.canceled) {
+        // Restock snacks
+        for (const it of purchase.items || []) {
+          if (it.snackId) {
+            const snack = await Snack.findById(it.snackId).session(session);
+            if (snack) {
+              snack.ProductQuantity = (snack.ProductQuantity || 0) + (it.quantity || 0);
+              await snack.save({ session });
+            }
+          }
+        }
+        purchase.canceled = true;
+        await purchase.save({ session });
+      }
+    }
+
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ success: true, message: 'Booking canceled', booking });
+    res.status(200).json({ success: true, message: 'Booking and associated purchase canceled', booking });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();

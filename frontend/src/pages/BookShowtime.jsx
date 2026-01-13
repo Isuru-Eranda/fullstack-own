@@ -161,7 +161,8 @@ export default function BookShowtime() {
       setCartItemsCount(cart.reduce((s, i) => s + (i.qty || 0), 0));
       setCartTotal(cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 0)), 0));
       toast.success('Tickets added to cart');
-      navigate('/cart');
+      // Small delay to ensure toast is shown before navigation
+      setTimeout(() => navigate('/cart'), 100);
     } catch (e) {
       console.error('Add tickets to cart failed', e);
       toast.error('Failed to add tickets to cart');

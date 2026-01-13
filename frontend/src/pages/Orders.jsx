@@ -11,34 +11,33 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders`, { credentials: 'include' });
+      const data = res.ok ? await res.json() : null;
+      if (data && data.orders) setOrders(data.orders);
+    } catch (err) {
+      console.error('Fetch orders error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    async function fetchOrders() {
-      setLoading(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/orders`, { credentials: 'include' });
-        const data = res.ok ? await res.json() : null;
-        if (mounted && data && data.orders) setOrders(data.orders);
-      } catch (err) {
-        console.error('Fetch orders error:', err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
     fetchOrders();
     return () => { mounted = false; };
   }, []);
 
   const cancelBooking = async (id) => {
-    if (!confirm('Cancel this booking?')) return;
+    if (!confirm('Cancel this booking? This will also cancel any associated purchases in the same order.')) return;
     try {
       const res = await fetch(`${API_BASE_URL}/bookings/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to cancel booking');
-      toast.success('Booking canceled');
-      setOrders((prev) => prev.map(o => ({
-        ...o,
-        bookings: (o.bookings || []).map(b => (b._id === id ? { ...b, canceled: true } : b)),
-      })));
+      toast.success('Booking and associated purchase canceled');
+      // Refresh orders to show updated state
+      fetchOrders();
     } catch (err) {
       console.error(err);
       toast.error(err.message || 'Cancel failed');
@@ -46,12 +45,13 @@ export default function OrdersPage() {
   };
 
   const cancelPurchase = async (id) => {
-    if (!confirm('Cancel this purchase? This will restock the items.')) return;
+    if (!confirm('Cancel this purchase? This will also cancel any associated bookings in the same order.')) return;
     try {
       const res = await fetch(`${API_BASE_URL}/purchases/${id}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to cancel purchase');
-      toast.success('Purchase canceled and items restocked');
-      setOrders((prev) => prev.map(o => (o.purchase && o.purchase._id === id ? { ...o, purchase: { ...o.purchase, canceled: true } } : o)));
+      toast.success('Purchase and associated bookings canceled');
+      // Refresh orders to show updated state
+      fetchOrders();
     } catch (err) {
       console.error(err);
       toast.error(err.message || 'Cancel failed');
@@ -93,12 +93,24 @@ export default function OrdersPage() {
                         <div className="text-text-secondary text-sm">Total: {o.totalPrice}</div>
                       </div>
                       <div className="text-right">
-                        <button
-                          onClick={() => downloadReceipt(o._id)}
-                          className="px-3 py-1 bg-primary-500 text-white rounded text-sm mb-2 block"
-                        >
-                          Download Receipt
-                        </button>
+                        {(() => {
+                          const hasActiveBookings = o.bookings?.some(b => !b.canceled);
+                          const hasActivePurchase = o.purchase && !o.purchase.canceled;
+                          const hasAnyActiveItems = hasActiveBookings || hasActivePurchase;
+                          
+                          return hasAnyActiveItems ? (
+                            <button
+                              onClick={() => downloadReceipt(o._id)}
+                              className="px-3 py-1 bg-primary-500 text-white rounded text-sm mb-2 block"
+                            >
+                              Download Receipt
+                            </button>
+                          ) : (
+                            <div className="text-text-secondary text-sm mb-2">
+                              All items canceled
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -118,6 +130,7 @@ export default function OrdersPage() {
                                 </div>
                                 <div>
                                   {!b.canceled && <button onClick={() => cancelBooking(b._id)} className="px-3 py-1 bg-red-600 text-white rounded">Cancel</button>}
+                                  {b.canceled && <span className="text-red-400 text-sm">Canceled</span>}
                                 </div>
                               </li>
                             ))}
@@ -132,8 +145,9 @@ export default function OrdersPage() {
                         ) : (
                           <div className="p-2 bg-background-800 rounded">
                             <div className="text-text-secondary text-sm">Items: {o.purchase.items?.map(i => `${i.name} x${i.quantity}`).join(', ')}</div>
-                            <div className="text-text-secondary text-sm">{o.purchase.canceled ? 'Canceled' : new Date(o.purchase.createdAt).toLocaleString()}</div>
+                            {!o.purchase.canceled && <div className="text-text-secondary text-sm">{new Date(o.purchase.createdAt).toLocaleString()}</div>}
                             {!o.purchase.canceled && <div className="mt-2"><button onClick={() => cancelPurchase(o.purchase._id)} className="px-3 py-1 bg-red-600 text-white rounded">Cancel Purchase</button></div>}
+                            {o.purchase.canceled && <div className="mt-2 text-red-400 text-sm">Purchase Canceled</div>}
                           </div>
                         )}
                       </div>

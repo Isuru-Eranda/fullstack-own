@@ -14,6 +14,7 @@ export default function Cart() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [successInfo, setSuccessInfo] = useState({ bookings: [], purchase: null });
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const navigate = useNavigate();
 
   if (authLoading) {
@@ -47,6 +48,8 @@ export default function Cart() {
       setTimeout(() => navigate('/login'), 600);
       return;
     }
+    
+    setPaymentLoading(true);
     try {
       // call unified checkout endpoint
       const res = await fetch(`${API_BASE_URL}/checkout`, {
@@ -86,6 +89,8 @@ export default function Cart() {
     } catch (err) {
       console.error('Checkout error:', err);
       toast.error(err.message || 'Checkout failed');
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -121,13 +126,31 @@ export default function Cart() {
                     <div className="w-28 text-right font-semibold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(it.price)}</div>
                   ) : (
                     <>
-                      <button onClick={() => handleQty(it.id, Math.max(1, it.qty - 1))} className="px-3 py-2 bg-surface-500 rounded">-</button>
+                      <button 
+                        onClick={() => handleQty(it.id, Math.max(1, it.qty - 1))} 
+                        disabled={paymentLoading}
+                        className="px-3 py-2 bg-surface-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        -
+                      </button>
                       <div className="w-10 text-center font-medium">{it.qty}</div>
-                      <button onClick={() => handleQty(it.id, it.qty + 1)} className="px-3 py-2 bg-surface-500 rounded">+</button>
+                      <button 
+                        onClick={() => handleQty(it.id, it.qty + 1)} 
+                        disabled={paymentLoading}
+                        className="px-3 py-2 bg-surface-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        +
+                      </button>
                       <div className="w-28 text-right font-semibold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(it.price * it.qty)}</div>
                     </>
                   )}
-                  <button onClick={() => handleRemove(it.id)} className="ml-2 px-3 py-2 bg-red-600 text-white rounded">Remove</button>
+                  <button 
+                    onClick={() => handleRemove(it.id)} 
+                    disabled={paymentLoading}
+                    className="ml-2 px-3 py-2 bg-red-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             ))}
@@ -139,8 +162,27 @@ export default function Cart() {
             </div>
 
             <div className="hidden sm:flex justify-end gap-3">
-              <button onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} className="px-4 py-2 bg-gray-600 rounded">Clear</button>
-              <button onClick={handlePay} className="px-4 py-2 bg-primary-500 text-white rounded">Pay Now</button>
+              <button 
+                onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} 
+                disabled={paymentLoading}
+                className="px-4 py-2 bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear
+              </button>
+              <button 
+                onClick={handlePay} 
+                disabled={paymentLoading}
+                className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {paymentLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Pay Now'
+                )}
+              </button>
             </div>
 
             {/* Mobile sticky checkout bar */}
@@ -151,8 +193,27 @@ export default function Cart() {
                   <div className="text-lg font-bold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(total)}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} className="px-3 py-2 bg-gray-600 rounded">Clear</button>
-                  <button onClick={handlePay} className="px-4 py-2 bg-primary-500 text-white rounded">Pay</button>
+                  <button 
+                    onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} 
+                    disabled={paymentLoading}
+                    className="px-3 py-2 bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Clear
+                  </button>
+                  <button 
+                    onClick={handlePay} 
+                    disabled={paymentLoading}
+                    className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      'Pay'
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

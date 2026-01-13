@@ -17,7 +17,8 @@ export default function SnackOverviewPage() {
         addToCartUtil(snack, 1);
         toast.success("Product added to cart");
         console.log(getCartUtil());
-        navigate('/cart');
+        // Small delay to ensure toast is shown before navigation
+        setTimeout(() => navigate('/cart'), 100);
     };
 
     const handleBuyNow = () => {

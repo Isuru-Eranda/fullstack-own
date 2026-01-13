@@ -1,5 +1,8 @@
 const Purchase = require('../models/Purchase');
 const Snack = require('../models/Snack');
+const Order = require('../models/Order');
+const Booking = require('../models/Booking');
+const Showtime = require('../models/Showtime');
 
 // Create a snack purchase (protected)
 exports.createPurchase = async (req, res) => {
@@ -113,10 +116,34 @@ exports.cancelPurchase = async (req, res) => {
     purchase.canceled = true;
     await purchase.save({ session });
 
+    // Find the order containing this purchase and cancel associated bookings
+    const order = await Order.findOne({ 
+      userId: req.user._id, 
+      purchase: purchaseId 
+    }).session(session);
+
+    if (order && order.bookings && order.bookings.length > 0) {
+      for (const bookingId of order.bookings) {
+        const booking = await Booking.findById(bookingId).session(session);
+        if (booking && !booking.canceled) {
+          // Release seats back to showtime
+          const showtime = await Showtime.findById(booking.showtimeId).session(session);
+          if (showtime) {
+            const seatsToRelease = booking.seats || [];
+            showtime.bookedSeats = showtime.bookedSeats.filter(s => !seatsToRelease.includes(s));
+            showtime.seatsAvailable = (showtime.seatsAvailable || 0) + seatsToRelease.length;
+            await showtime.save({ session });
+          }
+          booking.canceled = true;
+          await booking.save({ session });
+        }
+      }
+    }
+
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ success: true, message: 'Purchase canceled', purchase });
+    res.status(200).json({ success: true, message: 'Purchase and associated bookings canceled', purchase });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
