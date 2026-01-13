@@ -25,7 +25,13 @@ export default function BookShowtime() {
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
 
+  // Validate showtimeId
   useEffect(() => {
+    if (!showtimeId || showtimeId === 'undefined' || showtimeId === 'null') {
+      toast.error('Invalid showtime ID');
+      navigate('/movies');
+      return;
+    }
     fetchShowtime();
   }, [showtimeId]);
 
@@ -74,6 +80,13 @@ export default function BookShowtime() {
   }, [cinemaQueryId]);
 
   const fetchShowtime = async () => {
+    // Validate showtimeId before making API call
+    if (!showtimeId || showtimeId === 'undefined' || showtimeId === 'null') {
+      toast.error('Invalid showtime ID');
+      navigate('/movies');
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/showtimes/${showtimeId}`);

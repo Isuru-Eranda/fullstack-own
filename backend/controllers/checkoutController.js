@@ -10,7 +10,7 @@ const Order = require('../models/Order');
 function generateReceiptBase64({ user, bookings = [], purchase = null }) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ size: 'A4', margin: 40 });
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
       const chunks = [];
       doc.on('data', (chunk) => chunks.push(chunk));
       doc.on('end', () => {
@@ -18,53 +18,94 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
         resolve(result.toString('base64'));
       });
 
-      // Header
-      doc.fontSize(22).fillColor('#000000').text('Enimate', { align: 'center' });
-      doc.moveDown(0.3);
-      doc.fontSize(12).fillColor('#444444').text('Receipt', { align: 'center' });
-      doc.moveDown();
+      // Colors
+      const primaryColor = '#1a365d'; // Dark blue
+      const secondaryColor = '#2d3748'; // Gray
+      const accentColor = '#3182ce'; // Blue
+      const textColor = '#1a202c'; // Dark gray
 
+      // Header with logo placeholder
+      doc.rect(0, 0, doc.page.width, 100).fill(primaryColor);
+      doc.fillColor('white').fontSize(28).font('Helvetica-Bold').text('ENIMATE', 50, 30, { align: 'left' });
+      doc.fontSize(12).font('Helvetica').text('Cinema & Entertainment', 50, 60);
+      doc.fontSize(10).text('Your Ultimate Movie Experience', 50, 75);
+
+      // Receipt title
+      doc.fillColor(textColor).fontSize(20).font('Helvetica-Bold').text('RECEIPT', 0, 120, { align: 'center' });
+      doc.moveDown(0.5);
+
+      // Customer and date info
+      doc.fontSize(11).font('Helvetica').fillColor(textColor);
       if (user) {
-        doc.fontSize(10).fillColor('#000').text(`Customer: ${user.name || user.email || user._id}`);
+        doc.text(`Customer: ${user.name || user.email || user._id}`, 50, 160);
       }
-      doc.fontSize(10).text(`Date: ${new Date().toLocaleString()}`);
-      doc.moveDown();
+      doc.text(`Order Date: ${new Date().toLocaleString()}`, 50, 175);
+      doc.text(`Receipt Generated: ${new Date().toLocaleString()}`, 50, 190);
 
+      let yPosition = 220;
       let grandTotal = 0;
 
+      // Bookings section
       if (bookings && bookings.length) {
-        doc.fontSize(14).fillColor('#000').text('Bookings', { underline: true });
-        doc.moveDown(0.3);
+        doc.moveTo(50, yPosition).lineTo(545, yPosition).stroke(accentColor);
+        yPosition += 10;
+        doc.fontSize(14).font('Helvetica-Bold').fillColor(primaryColor).text('MOVIE TICKETS', 50, yPosition);
+        yPosition += 20;
+
         bookings.forEach((b, idx) => {
           const showInfo = b.showtimeInfo || {};
-          doc.fontSize(11).fillColor('#000').text(`${idx + 1}. Booking ID: ${b._id}`);
-          doc.fontSize(11).fillColor('#333').text(`   Movie: ${showInfo.movieTitle || ''}`);
-          doc.fontSize(11).fillColor('#333').text(`   Showtime: ${new Date(showInfo.startTime || b.createdAt || Date.now()).toLocaleString()}`);
-          if (b.seats && b.seats.length) doc.fontSize(11).fillColor('#333').text(`   Seats: ${b.seats.join(', ')}`);
-          doc.fontSize(11).fillColor('#000').text(`   Price: ${Number(b.totalPrice || 0)}`);
-          doc.moveDown(0.4);
+          doc.fontSize(12).font('Helvetica-Bold').fillColor(textColor).text(`${idx + 1}. Booking Reference: ${b._id}`, 50, yPosition);
+          yPosition += 15;
+          doc.fontSize(11).font('Helvetica').fillColor(secondaryColor).text(`Movie: ${showInfo.movieTitle || 'N/A'}`, 70, yPosition);
+          yPosition += 15;
+          doc.text(`Showtime: ${new Date(showInfo.startTime || b.createdAt || Date.now()).toLocaleString()}`, 70, yPosition);
+          yPosition += 15;
+          if (b.seats && b.seats.length) {
+            doc.text(`Seats: ${b.seats.join(', ')}`, 70, yPosition);
+            yPosition += 15;
+          }
+          doc.fontSize(12).font('Helvetica-Bold').fillColor(accentColor).text(`Price: LKR ${Number(b.totalPrice || 0).toLocaleString()}`, 70, yPosition);
+          yPosition += 20;
           grandTotal += Number(b.totalPrice || 0);
         });
-        doc.moveDown();
+        yPosition += 10;
       }
 
+      // Snacks/Purchases section
       if (purchase) {
-        doc.fontSize(14).fillColor('#000').text('Snacks / Purchases', { underline: true });
-        doc.moveDown(0.3);
+        doc.moveTo(50, yPosition).lineTo(545, yPosition).stroke(accentColor);
+        yPosition += 10;
+        doc.fontSize(14).font('Helvetica-Bold').fillColor(primaryColor).text('CONCESSION ITEMS', 50, yPosition);
+        yPosition += 20;
+
         purchase.items.forEach((it, idx) => {
           const lineTotal = Number(it.price || 0) * Number(it.quantity || 0);
-          doc.fontSize(11).fillColor('#333').text(`${idx + 1}. ${it.name} x${it.quantity} — ${lineTotal}`);
+          doc.fontSize(11).font('Helvetica').fillColor(textColor).text(`${idx + 1}. ${it.name}`, 50, yPosition);
+          doc.text(`Quantity: ${it.quantity} × LKR ${Number(it.price || 0).toLocaleString()}`, 70, yPosition + 15);
+          doc.fontSize(12).font('Helvetica-Bold').fillColor(accentColor).text(`Subtotal: LKR ${lineTotal.toLocaleString()}`, 70, yPosition + 30);
+          yPosition += 50;
           grandTotal += lineTotal;
         });
+
         if (purchase._id) {
-          doc.moveDown(0.2);
-          doc.fontSize(11).fillColor('#000').text(`Purchase ID: ${purchase._id}`);
+          doc.fontSize(10).font('Helvetica').fillColor(secondaryColor).text(`Purchase ID: ${purchase._id}`, 50, yPosition);
+          yPosition += 15;
         }
-        doc.moveDown();
+        yPosition += 10;
       }
 
-      doc.moveDown(0.5);
-      doc.fontSize(12).fillColor('#000').text(`Grand Total: ${grandTotal}`, { align: 'right' });
+      // Total section
+      doc.moveTo(50, yPosition).lineTo(545, yPosition).stroke(primaryColor);
+      yPosition += 15;
+      doc.fontSize(16).font('Helvetica-Bold').fillColor(primaryColor).text(`GRAND TOTAL: LKR ${grandTotal.toLocaleString()}`, 50, yPosition, { align: 'right' });
+
+      // Footer
+      const footerY = doc.page.height - 100;
+      doc.moveTo(50, footerY).lineTo(545, footerY).stroke(secondaryColor);
+      doc.fontSize(9).font('Helvetica').fillColor(secondaryColor).text('Thank you for choosing Enimate!', 50, footerY + 10, { align: 'center' });
+      doc.text('For any inquiries, contact us at support@enimate.com', 50, footerY + 25, { align: 'center' });
+      doc.text('Terms & Conditions: Tickets are non-refundable. Valid only for the specified showtime.', 50, footerY + 40, { align: 'center' });
+
       doc.end();
     } catch (err) {
       reject(err);
@@ -209,21 +250,23 @@ exports.checkout = async (req, res) => {
     }
     // Create Order linking bookings and purchase within the same transaction
     const orderTotal = bookingsTotal + (purchaseDoc ? Number(purchaseDoc.totalPrice || 0) : 0);
+
+    // Generate PDF receipt
+    const receiptBase64 = await generateReceiptBase64({ user, bookings: createdBookings, purchase: purchaseDoc });
+
     const orderDocs = await Order.create([
       {
         userId: user._id,
         bookings: createdBookingIds,
         purchase: purchaseDoc ? purchaseDoc._id : null,
         totalPrice: orderTotal,
+        receipt: receiptBase64,
       },
     ], { session });
     const orderDoc = orderDocs[0];
 
     await session.commitTransaction();
     session.endSession();
-
-    // Generate PDF receipt
-    const receiptBase64 = await generateReceiptBase64({ user, bookings: createdBookings, purchase: purchaseDoc });
 
     // Populate order for response
     const populatedOrder = await Order.findById(orderDoc._id).populate({ path: 'bookings', populate: { path: 'showtimeId', populate: { path: 'movieId' } } }).populate('purchase');

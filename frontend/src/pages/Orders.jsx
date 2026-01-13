@@ -4,6 +4,7 @@ import LoadingLogo from '../components/LoadingLogo';
 import { API_BASE_URL } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from '../hooks/useNavigate';
+import { downloadBase64Pdf } from '../utils/receipt';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -57,6 +58,19 @@ export default function OrdersPage() {
     }
   };
 
+  const downloadReceipt = async (orderId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/receipt`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Receipt not available');
+      const data = await res.json();
+      downloadBase64Pdf(data.receipt, `enimate_receipt_${orderId}.pdf`);
+      toast.success('Receipt downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to download receipt');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background-900 text-text-primary">
       <Navbar />
@@ -79,7 +93,12 @@ export default function OrdersPage() {
                         <div className="text-text-secondary text-sm">Total: {o.totalPrice}</div>
                       </div>
                       <div className="text-right">
-                        {/* could add order-level actions here */}
+                        <button
+                          onClick={() => downloadReceipt(o._id)}
+                          className="px-3 py-1 bg-primary-500 text-white rounded text-sm mb-2 block"
+                        >
+                          Download Receipt
+                        </button>
                       </div>
                     </div>
 

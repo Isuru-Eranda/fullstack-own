@@ -5,6 +5,7 @@ const orderSchema = new mongoose.Schema({
   bookings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }],
   purchase: { type: mongoose.Schema.Types.ObjectId, ref: 'Purchase' },
   totalPrice: { type: Number, default: 0 },
+  receipt: { type: String }, // base64 PDF
   createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

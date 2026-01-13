@@ -13,3 +13,20 @@ exports.getUserOrders = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching orders' });
   }
 };
+
+// Get receipt for a specific order
+exports.getOrderReceipt = async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    if (!order.receipt) {
+      return res.status(404).json({ message: 'Receipt not available for this order' });
+    }
+    res.status(200).json({ success: true, receipt: order.receipt });
+  } catch (err) {
+    console.error('Get receipt error:', err);
+    res.status(500).json({ message: 'Server error fetching receipt' });
+  }
+};

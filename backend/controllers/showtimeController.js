@@ -363,7 +363,18 @@ exports.getAllShowtimes = async (req, res) => {
  */
 exports.getShowtimeById = async (req, res) => {
   try {
-    const showtime = await Showtime.findById(req.params.id)
+    const { id } = req.params;
+
+    // Validate ID
+    if (!id || id === 'undefined' || id === 'null') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid showtime ID",
+        code: "INVALID_ID",
+      });
+    }
+
+    const showtime = await Showtime.findById(id)
       .populate("movieId")
       .populate("hallId")
       .populate("cinemaId", "name city");
