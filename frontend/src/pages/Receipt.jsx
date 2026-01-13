@@ -42,7 +42,7 @@ export default function ReceiptPage() {
         <Navbar />
         <div className="max-w-3xl mx-auto p-6">
           <h1 className="text-2xl font-bold mb-4">Receipt not found</h1>
-          <p className="text-text-secondary">We couldn't find a recent receipt. If you just completed checkout, try returning to the cart and retrying, or check your profile orders.</p>
+          <p className="text-text-secondary">We couldn't find a recent receipt. If you just completed checkout, try returning to the cart and retrying, or check your orders.</p>
           <div className="mt-4">
             <button onClick={() => navigate('/')} className="px-4 py-2 bg-primary-500 text-white rounded">Go Home</button>
           </div>
@@ -85,7 +85,7 @@ export default function ReceiptPage() {
 
         {order.purchase && (
           <div className="bg-surface-600 p-4 rounded mb-4">
-            <h2 className="font-semibold mb-2">Snacks Purchase</h2>
+            <h2 className="font-semibold mb-2">Snacks</h2>
             <div>Purchase ID: {order.purchase._id}</div>
             <div className="text-text-secondary">
               Items: {order.purchase.items?.map(i => `${i.name} x${i.quantity}`).join(', ')}
@@ -105,7 +105,7 @@ export default function ReceiptPage() {
             Download Receipt (PDF)
           </button>
 
-          <button onClick={() => navigate('/profile')} className="px-4 py-2 bg-gray-600 text-white rounded">View Profile Orders</button>
+          <button onClick={() => navigate('/orders')} className="px-4 py-2 bg-gray-600 text-white rounded">View Orders</button>
         </div>
       </div>
     </div>

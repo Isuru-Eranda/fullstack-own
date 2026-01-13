@@ -139,7 +139,7 @@ export default function OrdersPage() {
                       </div>
 
                       <div>
-                        <div className="font-medium mb-1">Snacks / Purchases</div>
+                        <div className="font-medium mb-1">Snacks</div>
                         {(!o.purchase) ? (
                           <div className="text-text-secondary">No snacks in this order.</div>
                         ) : (
