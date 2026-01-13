@@ -67,18 +67,24 @@ export default function Cinemas() {
                 </div>
 
                 <div className="p-4">
-                  <div className="text-sm text-text-secondary mb-2">
-                    <span className="font-semibold text-secondary-200">City:</span> <span className="ml-1">{c.city || '—'}</span>
-                  </div>
+                  {c.city && (
+                    <div className="text-sm text-text-secondary mb-2">
+                      <span className="font-semibold text-secondary-200">City:</span> <span className="ml-1">{c.city}</span>
+                    </div>
+                  )}
 
-                  <div className="text-sm text-text-secondary mb-2">
-                    <span className="font-semibold text-secondary-200">Address:</span> <span className="ml-1">{c.address || '—'}</span>
-                  </div>
+                  {c.address && (
+                    <div className="text-sm text-text-secondary mb-2">
+                      <span className="font-semibold text-secondary-200">Address:</span> <span className="ml-1">{c.address}</span>
+                    </div>
+                  )}
 
-                  <div className="text-sm text-text-secondary">
-                    <span className="font-semibold text-secondary-200">About:</span>
-                    <p className="mt-1 text-sm text-text-secondary">{c.description ? c.description : 'No description provided.'}</p>
-                  </div>
+                  {c.description && (
+                    <div className="text-sm text-text-secondary">
+                      <span className="font-semibold text-secondary-200">About:</span>
+                      <p className="mt-1 text-sm text-text-secondary">{c.description}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

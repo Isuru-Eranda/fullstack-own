@@ -103,7 +103,7 @@ export default function CinemasManagement() {
               />
             )}
             <h3 className="text-lg font-semibold text-text-primary mb-2">{cinema.name}</h3>
-            <p className="text-text-secondary text-sm mb-1"><strong>City:</strong> {cinema.city}</p>
+            {cinema.city && <p className="text-text-secondary text-sm mb-1"><strong>City:</strong> {cinema.city}</p>}
             {cinema.address && <p className="text-text-secondary text-sm mb-1"><strong>Address:</strong> {cinema.address}</p>}
             {cinema.description && <p className="text-text-secondary text-sm mb-3"><strong>Description:</strong> {cinema.description}</p>}
             <div className="flex gap-2">
