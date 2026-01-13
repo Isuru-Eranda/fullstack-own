@@ -177,18 +177,39 @@ export default function MovieDetails() {
             </div>
 
             {/* Cast & Crew */}
-            {movie.cast && movie.cast.length > 0 && (
+            {((movie.castImages && movie.castImages.length > 0) || (movie.cast && movie.cast.length > 0)) && (
               <div className="mb-8">
                 <h2 className="text-xl font-bold uppercase tracking-wide mb-4 text-text-primary">Cast & Crew</h2>
                 <div className="flex gap-6 overflow-x-auto pb-4">
-                  {movie.cast.map((actor, index) => (
-                    <div key={index} className="text-center flex-shrink-0">
-                      <div className="w-20 h-20 rounded-full bg-surface-500 mx-auto mb-2 flex items-center justify-center border-2 border-secondary-400">
-                        <span className="text-2xl text-secondary-300">👤</span>
+                  {/* Display castImages if available */}
+                  {movie.castImages && movie.castImages.length > 0 ? (
+                    movie.castImages.map((castMember, index) => (
+                      <div key={index} className="text-center flex-shrink-0">
+                        {castMember.imageUrl ? (
+                          <img
+                            src={castMember.imageUrl}
+                            alt={castMember.name}
+                            className="w-20 h-20 rounded-full mx-auto mb-2 object-cover border-2 border-secondary-400"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-surface-500 mx-auto mb-2 flex items-center justify-center border-2 border-secondary-400">
+                            <span className="text-2xl text-secondary-300">👤</span>
+                          </div>
+                        )}
+                        <p className="text-xs font-medium uppercase max-w-[80px] truncate text-text-secondary">{castMember.name}</p>
                       </div>
-                      <p className="text-xs font-medium uppercase max-w-[80px] truncate text-text-secondary">{actor}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    /* Fallback to old cast array format */
+                    movie.cast.map((actor, index) => (
+                      <div key={index} className="text-center flex-shrink-0">
+                        <div className="w-20 h-20 rounded-full bg-surface-500 mx-auto mb-2 flex items-center justify-center border-2 border-secondary-400">
+                          <span className="text-2xl text-secondary-300">👤</span>
+                        </div>
+                        <p className="text-xs font-medium uppercase max-w-[80px] truncate text-text-secondary">{actor}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -234,12 +255,17 @@ export default function MovieDetails() {
                 <div>
                   <p className="text-text-muted uppercase text-xs tracking-wider mb-1">Status</p>
                   <p className="font-bold">
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      movie.status === 'Now Showing' ? 'bg-semantic-success/20 text-semantic-success border border-semantic-success' :
-                      movie.status === 'Coming Soon' ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue' :
-                      'bg-surface-400 text-text-muted border border-surface-400'
+                    <span className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md inline-block ${
+                      movie.status === 'now_showing' || movie.status === 'Now Showing' 
+                        ? 'bg-green-500/20 text-green-400 border border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.5)]' :
+                      movie.status === 'upcoming' || movie.status === 'Coming Soon' 
+                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' :
+                      'bg-red-500/20 text-red-400 border border-red-400 shadow-[0_0_15px_rgba(248,113,113,0.5)]'
                     }`}>
-                      {movie.status}
+                      {movie.status === 'now_showing' ? 'Now Showing' :
+                       movie.status === 'upcoming' ? 'Coming Soon' :
+                       movie.status === 'archived' ? 'Archived' :
+                       movie.status}
                     </span>
                   </p>
                 </div>

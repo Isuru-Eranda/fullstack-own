@@ -133,12 +133,33 @@ const movieSchema = new mongoose.Schema(
     },
 
     /**
-     * Cast members
+     * Cast members (deprecated - use castImages)
      * @type {Array<String>}
      * @optional
      */
     cast: {
       type: [String],
+      default: [],
+    },
+
+    /**
+     * Cast members with images
+     * @type {Array<Object>}
+     * @optional
+     * Each object contains: { name: String, imageUrl: String }
+     */
+    castImages: {
+      type: [{
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        imageUrl: {
+          type: String,
+          default: '',
+        },
+      }],
       default: [],
     },
 

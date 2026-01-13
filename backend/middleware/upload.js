@@ -58,7 +58,7 @@ const uploadToB2Middleware = (folder = 'movies') => async (req, res, next) => {
       req.file.b2FileName = uniqueFileName;
     }
 
-    // Handle multiple files upload
+    // Handle multiple files upload (array format)
     if (req.files && Array.isArray(req.files)) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
@@ -76,6 +76,30 @@ const uploadToB2Middleware = (folder = 'movies') => async (req, res, next) => {
         // Add B2 URL to file object
         file.b2Url = publicUrl;
         file.b2FileName = uniqueFileName;
+      }
+    }
+
+    // Handle multiple files upload (object format from upload.fields())
+    if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
+      for (const fieldName in req.files) {
+        const filesArray = req.files[fieldName];
+        for (let i = 0; i < filesArray.length; i++) {
+          const file = filesArray[i];
+          // Generate unique filename
+          const uniqueFileName = generateUniqueFileName(file.originalname);
+
+          // Upload to B2
+          const publicUrl = await uploadToB2(
+            file.buffer,
+            uniqueFileName,
+            file.mimetype,
+            folder
+          );
+
+          // Add B2 URL to file object
+          file.b2Url = publicUrl;
+          file.b2FileName = uniqueFileName;
+        }
       }
     }
 

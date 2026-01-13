@@ -18,6 +18,7 @@ exports.createMovie = async (req, res) => {
       trailerUrl,
       rating,
       cast,
+      castImagesData,
       director,
       status,
     } = req.body;
@@ -34,6 +35,31 @@ exports.createMovie = async (req, res) => {
     if (req.file && req.file.b2Url) {
       // Use B2 URL from upload middleware
       posterImage = req.file.b2Url;
+    }
+
+    // Handle cast images if uploaded (from req.files.castImages)
+    let parsedCastImages = [];
+    if (castImagesData) {
+      try {
+        parsedCastImages = typeof castImagesData === 'string' ? JSON.parse(castImagesData) : castImagesData;
+        console.log('Parsed cast images data:', parsedCastImages);
+      } catch (e) {
+        console.error('Error parsing castImagesData:', e);
+      }
+    }
+
+    // Map uploaded cast image files to castImages array
+    if (req.files && req.files.castImages && req.files.castImages.length > 0) {
+      console.log(`Mapping ${req.files.castImages.length} uploaded cast images`);
+      let fileIndex = 0;
+      for (let i = 0; i < parsedCastImages.length; i++) {
+        // If this cast member doesn't have an existing imageUrl, assign the next uploaded file
+        if (!parsedCastImages[i].imageUrl && req.files.castImages[fileIndex]) {
+          parsedCastImages[i].imageUrl = req.files.castImages[fileIndex].b2Url;
+          console.log(`Assigned image to ${parsedCastImages[i].name}: ${parsedCastImages[i].imageUrl}`);
+          fileIndex++;
+        }
+      }
     }
 
     // Parse genre and cast arrays if they come as JSON strings
@@ -73,6 +99,7 @@ exports.createMovie = async (req, res) => {
     if (trailerUrl) movieData.trailerUrl = trailerUrl;
     if (rating) movieData.rating = Number(rating);
     if (parsedCast) movieData.cast = parsedCast;
+    if (parsedCastImages && parsedCastImages.length > 0) movieData.castImages = parsedCastImages;
     if (director) movieData.director = director;
     if (status) movieData.status = status;
 
@@ -241,6 +268,7 @@ exports.updateMovie = async (req, res) => {
       trailerUrl,
       rating,
       cast,
+      castImagesData,
       director,
       status,
     } = req.body;
@@ -267,6 +295,48 @@ exports.updateMovie = async (req, res) => {
       }
       // Update with new B2 URL
       movie.posterImage = req.file.b2Url;
+    }
+
+    // Handle cast images update
+    if (castImagesData) {
+      let parsedCastImages = [];
+      try {
+        parsedCastImages = typeof castImagesData === 'string' ? JSON.parse(castImagesData) : castImagesData;
+      } catch (e) {
+        console.error('Error parsing castImagesData:', e);
+      }
+
+      // Delete old cast images from B2 that are being replaced
+      if (movie.castImages && movie.castImages.length > 0) {
+        for (const oldCast of movie.castImages) {
+          if (oldCast.imageUrl && !oldCast.imageUrl.includes('placeholder')) {
+            // Check if this image is being replaced
+            const stillExists = parsedCastImages.some(newCast => newCast.imageUrl === oldCast.imageUrl);
+            if (!stillExists) {
+              try {
+                await deleteFromB2(oldCast.imageUrl);
+                console.log('Deleted old cast image from B2');
+              } catch (err) {
+                console.error('Error deleting old cast image from B2:', err);
+              }
+            }
+          }
+        }
+      }
+
+      // Map uploaded cast image files to castImages array
+      if (req.files && req.files.castImages && req.files.castImages.length > 0) {
+        let fileIndex = 0;
+        for (let i = 0; i < parsedCastImages.length; i++) {
+          // If this cast member doesn't have an existing imageUrl, assign the next uploaded file
+          if (!parsedCastImages[i].imageUrl && req.files.castImages[fileIndex]) {
+            parsedCastImages[i].imageUrl = req.files.castImages[fileIndex].b2Url;
+            fileIndex++;
+          }
+        }
+      }
+
+      movie.castImages = parsedCastImages;
     }
 
     // Parse genre and cast arrays if they come as JSON strings
@@ -369,6 +439,20 @@ exports.deleteMovie = async (req, res) => {
       } catch (err) {
         console.error('Error deleting poster image from B2:', err);
         // Continue with movie deletion even if file deletion fails
+      }
+    }
+
+    // Delete cast images from B2 if they exist
+    if (movie.castImages && movie.castImages.length > 0) {
+      for (const cast of movie.castImages) {
+        if (cast.imageUrl && !cast.imageUrl.includes('placeholder')) {
+          try {
+            await deleteFromB2(cast.imageUrl);
+            console.log('Deleted cast image from B2');
+          } catch (err) {
+            console.error('Error deleting cast image from B2:', err);
+          }
+        }
       }
     }
 

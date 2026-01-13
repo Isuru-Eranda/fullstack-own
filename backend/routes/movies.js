@@ -9,7 +9,7 @@ const {
   searchMovies,
 } = require('../controllers/movieController');
 const { protect, isAdmin } = require('../middleware/auth');
-const { uploadSingle } = require('../middleware/upload');
+const { uploadFields } = require('../middleware/upload');
 
 // Public routes
 /**
@@ -40,14 +40,32 @@ router.get('/:id', getMovieById);
  * @desc    Create a new movie
  * @access  Private/Admin
  */
-router.post('/', protect, isAdmin, uploadSingle('posterImage'), createMovie);
+router.post(
+  '/',
+  protect,
+  isAdmin,
+  uploadFields([
+    { name: 'posterImage', maxCount: 1 },
+    { name: 'castImages', maxCount: 20 },
+  ]),
+  createMovie
+);
 
 /**
  * @route   PUT /api/movies/:id
  * @desc    Update a movie
  * @access  Private/Admin
  */
-router.put('/:id', protect, isAdmin, uploadSingle('posterImage'), updateMovie);
+router.put(
+  '/:id',
+  protect,
+  isAdmin,
+  uploadFields([
+    { name: 'posterImage', maxCount: 1 },
+    { name: 'castImages', maxCount: 20 },
+  ]),
+  updateMovie
+);
 
 /**
  * @route   DELETE /api/movies/:id

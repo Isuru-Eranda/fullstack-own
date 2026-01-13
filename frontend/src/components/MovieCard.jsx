@@ -41,8 +41,19 @@ export default function MovieCard({ movie, onClick }) {
         
         {/* Status Badge (if movie has special status) */}
         {movie.status && movie.status !== 'active' && (
-          <div className="absolute bottom-2 left-2 bg-semantic-warning border border-accent-gold px-2 py-1 text-xs font-bold uppercase text-background-900">
-            {movie.status}
+          <div className={`absolute bottom-2 left-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded shadow-lg ${
+            movie.status === 'now_showing' || movie.status === 'Now Showing'
+              ? 'bg-green-500/90 text-white border border-green-400'
+              : movie.status === 'upcoming' || movie.status === 'Coming Soon'
+              ? 'bg-yellow-500/90 text-black border border-yellow-400'
+              : movie.status === 'archived' || movie.status === 'Archived'
+              ? 'bg-red-500/90 text-white border border-red-400'
+              : 'bg-surface-600 text-text-primary border border-secondary-400'
+          }`}>
+            {movie.status === 'now_showing' ? 'Now Showing' :
+             movie.status === 'upcoming' ? 'Coming Soon' :
+             movie.status === 'archived' ? 'Archived' :
+             movie.status}
           </div>
         )}
       </div>

@@ -28,6 +28,7 @@ export default function MovieForm() {
     trailerUrl: '',
     rating: '',
     cast: [],
+    castImages: [],
     director: '',
     status: 'upcoming',
   });
@@ -45,6 +46,7 @@ export default function MovieForm() {
   const [existingPosterUrl, setExistingPosterUrl] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
   const [castInput, setCastInput] = useState('');
+  const [castImageFiles, setCastImageFiles] = useState([]);
   const [youtubePreview, setYoutubePreview] = useState('');
 
   // Available genres
@@ -127,6 +129,7 @@ export default function MovieForm() {
           trailerUrl: movieData.trailerUrl || '',
           rating: movieData.rating || '',
           cast: movieData.cast || [],
+          castImages: movieData.castImages || [],
           director: movieData.director || '',
           status: movieData.status || 'upcoming',
         });
@@ -221,8 +224,9 @@ export default function MovieForm() {
       setHasChanges(true);
       setFormData(prev => ({
         ...prev,
-        cast: [...prev.cast, castInput.trim()]
+        castImages: [...prev.castImages, { name: castInput.trim(), imageUrl: '' }]
       }));
+      setCastImageFiles(prev => [...prev, null]);
       setCastInput('');
     }
   };
@@ -231,8 +235,62 @@ export default function MovieForm() {
     setHasChanges(true);
     setFormData(prev => ({
       ...prev,
-      cast: prev.cast.filter((_, i) => i !== index)
+      castImages: prev.castImages.filter((_, i) => i !== index)
     }));
+    setCastImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCastImageChange = (index, file) => {
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPG, JPEG, PNG, or WEBP)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setHasChanges(true);
+    const updatedFiles = [...castImageFiles];
+    updatedFiles[index] = file;
+    setCastImageFiles(updatedFiles);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => {
+        const updatedCastImages = [...prev.castImages];
+        updatedCastImages[index] = {
+          ...updatedCastImages[index],
+          imageUrl: reader.result // Use data URL for preview
+        };
+        return { ...prev, castImages: updatedCastImages };
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCastImage = (index) => {
+    setHasChanges(true);
+    const updatedFiles = [...castImageFiles];
+    updatedFiles[index] = null;
+    setCastImageFiles(updatedFiles);
+
+    setFormData(prev => {
+      const updatedCastImages = [...prev.castImages];
+      updatedCastImages[index] = {
+        ...updatedCastImages[index],
+        imageUrl: ''
+      };
+      return { ...prev, castImages: updatedCastImages };
+    });
   };
 
   // File upload handler
@@ -381,8 +439,22 @@ export default function MovieForm() {
     // Append genre array as JSON
     data.append('genre', JSON.stringify(formData.genre));
 
-    // Append cast array as JSON
+    // Append cast array as JSON (for backward compatibility)
     data.append('cast', JSON.stringify(formData.cast));
+
+    // Append castImages metadata (names and existing URLs)
+    const castImagesData = formData.castImages.map((cast, index) => ({
+      name: cast.name,
+      imageUrl: castImageFiles[index] ? '' : (cast.imageUrl || '') // Keep existing URL if no new file
+    }));
+    data.append('castImagesData', JSON.stringify(castImagesData));
+
+    // Append cast image files (only the ones that are new)
+    castImageFiles.forEach((file) => {
+      if (file) {
+        data.append('castImages', file);
+      }
+    });
 
     // Append poster image file if selected
     // In edit mode, only append if a new file was selected
@@ -803,19 +875,60 @@ export default function MovieForm() {
                   </button>
                 </div>
 
-                {/* Cast List */}
-                {formData.cast.length > 0 && (
-                  <div className="space-y-2">
-                    {formData.cast.map((actor, index) => (
+                {/* Cast List with Images */}
+                {formData.castImages.length > 0 && (
+                  <div className="space-y-4">
+                    {formData.castImages.map((cast, index) => (
                       <div 
                         key={index}
-                        className="flex items-center justify-between px-4 py-2 bg-surface-700 rounded-lg border border-secondary-400"
+                        className="flex items-center gap-4 px-4 py-4 bg-surface-700 rounded-lg border border-secondary-400"
                       >
-                        <span className="text-text-primary">{actor}</span>
+                        {/* Cast Image Preview */}
+                        <div className="flex-shrink-0">
+                          {cast.imageUrl ? (
+                            <div className="relative w-20 h-20">
+                              <img
+                                src={cast.imageUrl}
+                                alt={cast.name}
+                                className="w-20 h-20 rounded-full object-cover border-2 border-secondary-400"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCastImage(index)}
+                                className="absolute -top-1 -right-1 w-6 h-6 bg-semantic-error text-white rounded-full text-xs hover:bg-red-600"
+                                title="Remove image"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-20 h-20 rounded-full bg-surface-500 flex items-center justify-center border-2 border-secondary-400">
+                              <span className="text-2xl text-secondary-300">👤</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Cast Name */}
+                        <div className="flex-1">
+                          <p className="text-text-primary font-medium">{cast.name}</p>
+                          <label className="mt-2 inline-block">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              onChange={(e) => handleCastImageChange(index, e.target.files[0])}
+                              className="hidden"
+                            />
+                            <span className="text-xs text-secondary-300 hover:text-secondary-200 cursor-pointer underline">
+                              {cast.imageUrl ? 'Change Image' : 'Upload Image'}
+                            </span>
+                          </label>
+                        </div>
+
+                        {/* Remove Cast Button */}
                         <button
                           type="button"
                           onClick={() => handleRemoveCast(index)}
-                          className="text-semantic-error hover:text-red-400 transition-colors"
+                          className="px-4 py-2 text-semantic-error hover:text-red-400 transition-colors font-medium"
                         >
                           Remove
                         </button>
@@ -823,7 +936,7 @@ export default function MovieForm() {
                     ))}
                   </div>
                 )}
-                {formData.cast.length === 0 && (
+                {formData.castImages.length === 0 && (
                   <p className="text-sm text-text-muted">No cast members added yet.</p>
                 )}
               </div>
