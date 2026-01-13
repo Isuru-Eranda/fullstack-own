@@ -176,8 +176,8 @@ export default function SnackManagement() {
                                     </span>
                                 </td>
                                 
-                                <td className="px-4 py-3 text-gray-500 line-through">${snack.labelledPrice}</td>
-                                <td className="px-4 py-3 font-bold text-green-400">${snack.ProductPrice}</td>
+                                <td className="px-4 py-3 text-gray-500 line-through">Rs {snack.labelledPrice}</td>
+                                <td className="px-4 py-3 font-bold text-green-400">Rs {snack.ProductPrice}</td>
                                 <td className="px-4 py-3 text-center">
                                     <span className={`px-2 py-1 rounded text-xs ${snack.ProductQuantity > 50 ? 'bg-green-600 text-white' : snack.ProductQuantity > 20 ? 'bg-yellow-600 text-white' : 'bg-red-600 text-white'}`}>
                                         {snack.ProductQuantity}

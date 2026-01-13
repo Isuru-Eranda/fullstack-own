@@ -6,6 +6,7 @@ const orderSchema = new mongoose.Schema({
   purchase: { type: mongoose.Schema.Types.ObjectId, ref: 'Purchase' },
   totalPrice: { type: Number, default: 0 },
   receipt: { type: String }, // base64 PDF
+  status: { type: String, enum: ['active', 'cancelled'], default: 'active' },
   createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

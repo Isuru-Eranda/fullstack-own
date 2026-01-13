@@ -90,7 +90,7 @@ export default function OrdersPage() {
                       <div>
                         <div className="font-semibold">Order {o._id}</div>
                         <div className="text-text-secondary text-sm">{new Date(o.createdAt).toLocaleString()}</div>
-                        <div className="text-text-secondary text-sm">Total: {o.totalPrice}</div>
+                        <div className="text-text-secondary text-sm">Total: {new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(o.totalPrice)}</div>
                       </div>
                       <div className="text-right">
                         {(() => {

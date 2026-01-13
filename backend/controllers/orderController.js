@@ -14,6 +14,40 @@ exports.getUserOrders = async (req, res) => {
   }
 };
 
+// Get all orders for admin
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({})
+      .sort({ createdAt: -1 })
+      .populate({ path: 'bookings', populate: { path: 'showtimeId', populate: { path: 'movieId' } } })
+      .populate('purchase')
+      .populate('userId', 'firstName lastName email');
+    res.status(200).json({ success: true, orders });
+  } catch (err) {
+    console.error('Get all orders error:', err);
+    res.status(500).json({ message: 'Server error fetching orders' });
+  }
+};
+
+// Cancel order by admin
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    if (order.status === 'cancelled') {
+      return res.status(400).json({ message: 'Order already cancelled' });
+    }
+    order.status = 'cancelled';
+    await order.save();
+    res.status(200).json({ success: true, message: 'Order cancelled successfully' });
+  } catch (err) {
+    console.error('Cancel order error:', err);
+    res.status(500).json({ message: 'Server error cancelling order' });
+  }
+};
+
 // Get receipt for a specific order
 exports.getOrderReceipt = async (req, res) => {
   try {

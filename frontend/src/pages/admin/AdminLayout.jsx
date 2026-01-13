@@ -60,6 +60,7 @@ export default function AdminLayout() {
               <a href="/admin-dashboard/user-management" className="block px-3 py-2 rounded hover:bg-surface-500">Users</a>
               <a href="/admin-dashboard/snack-management" className="block px-3 py-2 rounded hover:bg-surface-500">Snacks</a>
               <a href="/admin-dashboard/addsnack" className="block px-3 py-2 rounded hover:bg-surface-500">Add Snacks</a>
+              <a href="/admin-dashboard/order-management" className="block px-3 py-2 rounded hover:bg-surface-500">Order Management</a>
             </nav>
 
             <div className="mt-6">

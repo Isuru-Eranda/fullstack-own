@@ -21,6 +21,7 @@ import CreateShowtime from './pages/admin/CreateShowtime';
 import UserManagement from './pages/admin/UserManagement';
 import SnackManagement from './pages/admin/snackmanagement';
 import AddSnacks from './pages/admin/addsnacks';
+import OrderManagement from './pages/admin/OrderManagement';
 import AdminLayout from './pages/admin/AdminLayout';
 import Cinemas from './pages/Cinemas';
 import CinemasManagement from './pages/admin/CinemasManagement';
@@ -73,6 +74,7 @@ function AppContent() {
         <Route path="user-management" element={<UserManagement />} />
         <Route path="snack-management" element={<SnackManagement />} />
         <Route path="addsnack" element={<AddSnacks />} />
+        <Route path="order-management" element={<OrderManagement />} />
       </Route>
 
       {/* Keep old top-level admin paths redirecting to new nested paths for backward compatibility */}
