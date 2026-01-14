@@ -9,6 +9,7 @@ const purchaseSchema = new mongoose.Schema({
       name: String,
       price: Number,
       quantity: Number,
+      canceled: { type: Boolean, default: false },
     },
   ],
   totalPrice: { type: Number, required: true },

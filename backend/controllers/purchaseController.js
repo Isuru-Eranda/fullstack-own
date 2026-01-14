@@ -102,9 +102,9 @@ exports.cancelPurchase = async (req, res) => {
       return res.status(400).json({ message: 'Purchase already canceled' });
     }
 
-    // Restock snacks
+    // Restock non-canceled snacks
     for (const it of purchase.items || []) {
-      if (it.snackId) {
+      if (!it.canceled && it.snackId) {
         const snack = await Snack.findById(it.snackId).session(session);
         if (snack) {
           snack.ProductQuantity = (snack.ProductQuantity || 0) + (it.quantity || 0);
@@ -113,41 +113,78 @@ exports.cancelPurchase = async (req, res) => {
       }
     }
 
+    // Mark all non-canceled items as canceled
+    purchase.items = purchase.items.map(it => ({ ...it, canceled: true }));
     purchase.canceled = true;
     await purchase.save({ session });
-
-    // Find the order containing this purchase and cancel associated bookings
-    const order = await Order.findOne({ 
-      userId: req.user._id, 
-      purchase: purchaseId 
-    }).session(session);
-
-    if (order && order.bookings && order.bookings.length > 0) {
-      for (const bookingId of order.bookings) {
-        const booking = await Booking.findById(bookingId).session(session);
-        if (booking && !booking.canceled) {
-          // Release seats back to showtime
-          const showtime = await Showtime.findById(booking.showtimeId).session(session);
-          if (showtime) {
-            const seatsToRelease = booking.seats || [];
-            showtime.bookedSeats = showtime.bookedSeats.filter(s => !seatsToRelease.includes(s));
-            showtime.seatsAvailable = (showtime.seatsAvailable || 0) + seatsToRelease.length;
-            await showtime.save({ session });
-          }
-          booking.canceled = true;
-          await booking.save({ session });
-        }
-      }
-    }
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ success: true, message: 'Purchase and associated bookings canceled', purchase });
+    res.status(200).json({ success: true, message: 'Purchase canceled', purchase });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
     console.error('Cancel purchase error:', err);
     res.status(500).json({ message: 'Server error canceling purchase' });
+  }
+};
+
+// Cancel a specific item in a purchase and restock
+exports.cancelPurchaseItem = async (req, res) => {
+  const { purchaseId, itemIndex } = req.params;
+  if (!purchaseId || itemIndex === undefined) return res.status(400).json({ message: 'Purchase id and item index required' });
+
+  const session = await Purchase.startSession();
+  session.startTransaction();
+  try {
+    const purchase = await Purchase.findOne({ _id: purchaseId, userId: req.user._id }).session(session);
+    if (!purchase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+    if (purchase.canceled) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Purchase already canceled' });
+    }
+
+    const idx = parseInt(itemIndex);
+    if (idx < 0 || idx >= purchase.items.length) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Invalid item index' });
+    }
+
+    const item = purchase.items[idx];
+    if (item.canceled) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Item already canceled' });
+    }
+
+    // Restock the snack
+    if (item.snackId) {
+      const snack = await Snack.findById(item.snackId).session(session);
+      if (snack) {
+        snack.ProductQuantity = (snack.ProductQuantity || 0) + (item.quantity || 0);
+        await snack.save({ session });
+      }
+    }
+
+    // Mark item as canceled
+    purchase.items[idx].canceled = true;
+    await purchase.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ success: true, message: 'Item canceled successfully', purchase });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Cancel purchase item error:', err);
+    res.status(500).json({ message: 'Server error canceling item' });
   }
 };

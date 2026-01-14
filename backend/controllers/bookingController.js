@@ -116,34 +116,62 @@ exports.cancelBooking = async (req, res) => {
     booking.canceled = true;
     await booking.save({ session });
 
-    // Find the order containing this booking and cancel associated purchase
+    // Find the order containing this booking and cancel the entire order
     const order = await Order.findOne({ 
       userId: req.user._id, 
       bookings: bookingId 
     }).session(session);
 
-    if (order && order.purchase) {
-      const purchase = await Purchase.findById(order.purchase).session(session);
-      if (purchase && !purchase.canceled) {
-        // Restock snacks
-        for (const it of purchase.items || []) {
-          if (it.snackId) {
-            const snack = await Snack.findById(it.snackId).session(session);
-            if (snack) {
-              snack.ProductQuantity = (snack.ProductQuantity || 0) + (it.quantity || 0);
-              await snack.save({ session });
+    if (order) {
+      // Cancel all bookings in the order
+      if (order.bookings && order.bookings.length > 0) {
+        for (const bId of order.bookings) {
+          const b = await Booking.findById(bId).session(session);
+          if (b && !b.canceled) {
+            // Release seats back to showtime
+            const st = await Showtime.findById(b.showtimeId).session(session);
+            if (st) {
+              const seatsToRelease = b.seats || [];
+              st.bookedSeats = st.bookedSeats.filter(s => !seatsToRelease.includes(s));
+              st.seatsAvailable = (st.seatsAvailable || 0) + seatsToRelease.length;
+              await st.save({ session });
             }
+            b.canceled = true;
+            await b.save({ session });
           }
         }
-        purchase.canceled = true;
-        await purchase.save({ session });
       }
+
+      // Cancel the purchase if exists
+      if (order.purchase) {
+        const purchase = await Purchase.findById(order.purchase).session(session);
+        if (purchase && !purchase.canceled) {
+          // Restock non-canceled snacks
+          for (const it of purchase.items || []) {
+            if (!it.canceled && it.snackId) {
+              const snack = await Snack.findById(it.snackId).session(session);
+              if (snack) {
+                snack.ProductQuantity = (snack.ProductQuantity || 0) + (it.quantity || 0);
+                await snack.save({ session });
+              }
+            }
+          }
+          // Mark all non-canceled items as canceled
+          purchase.items = purchase.items.map(it => ({ ...it, canceled: true }));
+          purchase.canceled = true;
+          await purchase.save({ session });
+        }
+      }
+
+      // Mark the order as cancelled
+      order.status = 'cancelled';
+      await order.save({ session });
     }
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ success: true, message: 'Booking and associated purchase canceled', booking });
+    res.status(200).json({ success: true, message: 'Booking and entire order canceled', booking });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
