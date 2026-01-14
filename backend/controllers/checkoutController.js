@@ -14,8 +14,7 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
     try {
       const doc = new PDFDocument({
         size: 'A4',
-        margin: 40,
-        bufferPages: true
+        margin: 40
       });
       const chunks = [];
       doc.on('data', (chunk) => chunks.push(chunk));
@@ -86,26 +85,28 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
           const showInfo = booking.showtimeInfo || {};
 
           // Booking item box
-          doc.rect(40, yPos, doc.page.width - 80, 80).fill('white').stroke(borderColor);
+          doc.rect(40, yPos, doc.page.width - 80, 90).fill('white').stroke(borderColor);
           doc.fillColor(textColor).fontSize(11).font('Helvetica-Bold').text(`Booking #${booking._id.toString().slice(-8)}`, 50, yPos + 8);
 
           doc.fontSize(10).font('Helvetica').fillColor(textColor);
           doc.text(`Movie: ${showInfo.movieTitle || 'N/A'}`, 50, yPos + 25);
-          doc.text(`Showtime: ${new Date(showInfo.startTime || booking.createdAt || Date.now()).toLocaleString()}`, 50, yPos + 40);
+          doc.text(`Cinema: ${showInfo.cinemaName || 'N/A'}`, 50, yPos + 35);
+          doc.text(`Hall: ${showInfo.hallName || 'N/A'}`, 50, yPos + 45);
+          doc.text(`Showtime: ${new Date(showInfo.startTime || booking.createdAt || Date.now()).toLocaleString()}`, 50, yPos + 55);
           if (booking.seats && booking.seats.length) {
-            doc.text(`Seats: ${booking.seats.join(', ')}`, 50, yPos + 55);
+            doc.text(`Seats: ${booking.seats.join(', ')}`, 50, yPos + 65);
           }
 
           doc.fontSize(12).font('Helvetica-Bold').fillColor(accentColor).text(`LKR ${Number(booking.totalPrice || 0).toLocaleString()}`, 0, yPos + 25, { align: 'right', width: doc.page.width - 50 });
 
           grandTotal += Number(booking.totalPrice || 0);
-          yPos += 90;
+          yPos += 100;
         });
       }
 
       // Snacks Section
       if (purchase && purchase.items && purchase.items.length) {
-        if (bookings && bookings.length) yPos += 10; // Add space between sections
+        if (bookings && bookings.length) yPos += 5; // Reduce space between sections
 
         doc.fillColor(primaryColor).fontSize(14).font('Helvetica-Bold').text('CONCESSION ITEMS', 40, yPos);
         yPos += 20;
@@ -114,35 +115,35 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
           const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
 
           // Item box
-          doc.rect(40, yPos, doc.page.width - 80, 50).fill('white').stroke(borderColor);
+          doc.rect(40, yPos, doc.page.width - 80, 45).fill('white').stroke(borderColor); // Reduced height
           doc.fillColor(textColor).fontSize(11).font('Helvetica-Bold').text(item.name, 50, yPos + 8);
           doc.fontSize(10).font('Helvetica').fillColor(secondaryColor);
           doc.text(`Quantity: ${item.quantity} × LKR ${Number(item.price || 0).toLocaleString()}`, 50, yPos + 25);
           doc.fontSize(11).font('Helvetica-Bold').fillColor(accentColor).text(`LKR ${lineTotal.toLocaleString()}`, 0, yPos + 25, { align: 'right', width: doc.page.width - 50 });
 
           grandTotal += lineTotal;
-          yPos += 60;
+          yPos += 50; // Reduced increment
         });
 
         // Purchase ID
         if (purchase._id) {
           doc.fontSize(8).font('Helvetica').fillColor(secondaryColor).text(`Purchase ID: ${purchase._id}`, 40, yPos);
-          yPos += 15;
+          yPos += 10; // Reduced
         }
       }
 
       // Total section with professional styling
-      yPos += 20;
-      doc.rect(40, yPos, doc.page.width - 80, 40).fill(primaryColor).stroke(primaryColor);
-      doc.fillColor('white').fontSize(16).font('Helvetica-Bold').text('TOTAL AMOUNT', 50, yPos + 12);
-      doc.fontSize(18).font('Helvetica-Bold').fillColor('white').text(`LKR ${grandTotal.toLocaleString()}`, 0, yPos + 10, { align: 'right', width: doc.page.width - 50 });
+      yPos += 10; // Reduced
+      doc.rect(40, yPos, doc.page.width - 80, 35).fill(primaryColor).stroke(primaryColor); // Reduced height
+      doc.fillColor('white').fontSize(16).font('Helvetica-Bold').text('TOTAL AMOUNT', 50, yPos + 10);
+      doc.fontSize(18).font('Helvetica-Bold').fillColor('white').text(`LKR ${grandTotal.toLocaleString()}`, 0, yPos + 8, { align: 'right', width: doc.page.width - 50 });
 
       // Professional footer
-      const footerY = doc.page.height - 60;
-      doc.rect(0, footerY, doc.page.width, 60).fill(primaryColor);
-      doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text('Thank you for choosing Enimate Cinema!', 0, footerY + 15, { align: 'center' });
-      doc.fontSize(7).font('Helvetica').text('For inquiries: support@enimate.com | www.enimate.com', 0, footerY + 30, { align: 'center' });
-      doc.fontSize(6).text('Terms: Tickets are non-refundable. Valid only for the specified showtime. No shows after 24 hours.', 0, footerY + 42, { align: 'center' });
+      yPos += 45; // Position footer after total
+      doc.rect(0, yPos, doc.page.width, 50).fill(primaryColor); // Reduced height
+      doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text('Thank you for choosing Enimate Cinema!', 0, yPos + 10, { align: 'center' });
+      doc.fontSize(7).font('Helvetica').text('For inquiries: support@enimate.com | www.enimate.com', 0, yPos + 25, { align: 'center' });
+      doc.fontSize(6).text('Terms: Tickets are non-refundable. Valid only for the specified showtime. No shows after 24 hours.', 0, yPos + 35, { align: 'center' });
 
       doc.end();
     } catch (err) {
@@ -179,7 +180,7 @@ exports.checkout = async (req, res) => {
       }
 
       // populate movie for receipt display
-      const showtime = await Showtime.findById(showtimeId).populate('movieId').session(session);
+      const showtime = await Showtime.findById(showtimeId).populate('movieId').populate('cinemaId').populate('hallId').session(session);
       if (!showtime) {
         await session.abortTransaction();
         return res.status(404).json({ message: 'Showtime not found' });
@@ -233,8 +234,8 @@ exports.checkout = async (req, res) => {
       bd.showtimeInfo = {
         startTime: showtime.startTime,
         movieTitle: showtime.movieId?.title || showtime.movieId || '',
-        hallName: showtime.hallId || '',
-        cinemaName: showtime.cinemaId || '',
+        hallName: showtime.hallId?.name || showtime.hallId || '',
+        cinemaName: showtime.cinemaId?.name || showtime.cinemaId || '',
       };
       createdBookings.push(bd);
       createdBookingIds.push(bookingDocs[0]._id);
