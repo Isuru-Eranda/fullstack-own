@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Snack = require('../models/Snack');
@@ -9,7 +10,7 @@ const Purchase = require('../models/Purchase');
 const Order = require('../models/Order');
 
 // Helper to render a PDF receipt into base64
-function generateReceiptBase64({ user, bookings = [], purchase = null }) {
+function generateReceiptBase64({ user, bookings = [], purchase = null, paymentMethod = 'cash' }) {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -138,8 +139,12 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
       doc.fillColor('white').fontSize(16).font('Helvetica-Bold').text('TOTAL AMOUNT', 50, yPos + 10);
       doc.fontSize(18).font('Helvetica-Bold').fillColor('white').text(`LKR ${grandTotal.toLocaleString()}`, 0, yPos + 8, { align: 'right', width: doc.page.width - 50 });
 
+      // Payment Method
+      yPos += 45;
+      doc.fillColor(primaryColor).fontSize(12).font('Helvetica-Bold').text(`PAYMENT METHOD: ${paymentMethod.toUpperCase()}`, 40, yPos);
+
       // Professional footer
-      yPos += 45; // Position footer after total
+      yPos += 20; // Position footer after total
       doc.rect(0, yPos, doc.page.width, 50).fill(primaryColor); // Reduced height
       doc.fillColor('white').fontSize(9).font('Helvetica-Bold').text('Thank you for choosing Enimate Cinema!', 0, yPos + 10, { align: 'center' });
       doc.fontSize(7).font('Helvetica').text('For inquiries: support@enimate.com | www.enimate.com', 0, yPos + 25, { align: 'center' });
@@ -154,7 +159,7 @@ function generateReceiptBase64({ user, bookings = [], purchase = null }) {
 
 exports.checkout = async (req, res) => {
   const user = req.user;
-  const { items = [] } = req.body;
+  const { items = [], paymentMethod = 'cash' } = req.body;
 
   if (!user) return res.status(401).json({ message: 'Authentication required' });
   if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: 'No items provided' });
@@ -296,7 +301,7 @@ exports.checkout = async (req, res) => {
     const orderTotal = bookingsTotal + (purchaseDoc ? Number(purchaseDoc.totalPrice || 0) : 0);
 
     // Generate PDF receipt
-    const receiptBase64 = await generateReceiptBase64({ user, bookings: createdBookings, purchase: purchaseDoc });
+    const receiptBase64 = await generateReceiptBase64({ user, bookings: createdBookings, purchase: purchaseDoc, paymentMethod });
 
     const orderDocs = await Order.create([
       {
@@ -305,6 +310,7 @@ exports.checkout = async (req, res) => {
         purchase: purchaseDoc ? purchaseDoc._id : null,
         totalPrice: orderTotal,
         receipt: receiptBase64,
+        paymentMethod,
       },
     ], { session });
     const orderDoc = orderDocs[0];
@@ -321,5 +327,18 @@ exports.checkout = async (req, res) => {
     session.endSession();
     console.error('Checkout error:', err);
     res.status(500).json({ message: 'Server error during checkout' });
+  }
+};
+
+exports.createPaymentIntent = async (req, res) => {
+  const { amount } = req.body; // amount in cents
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'lkr',
+    });
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

@@ -25,9 +25,7 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    let mounted = true;
     fetchOrders();
-    return () => { mounted = false; };
   }, []);
 
   const cancelBooking = async (id) => {

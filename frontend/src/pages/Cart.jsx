@@ -15,6 +15,7 @@ export default function Cart() {
   const [receiptData, setReceiptData] = useState(null);
   const [successInfo, setSuccessInfo] = useState({ bookings: [], purchase: null });
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   const navigate = useNavigate();
 
   if (authLoading) {
@@ -48,26 +49,31 @@ export default function Cart() {
       setTimeout(() => navigate('/login'), 600);
       return;
     }
-    
+
+    if (paymentMethod === 'card') {
+      // Navigate to payment page
+      navigate('/payment', { state: { items, total, user } });
+      return;
+    }
+
+    // For cash, proceed with checkout
     setPaymentLoading(true);
     try {
-      // call unified checkout endpoint
-      const res = await fetch(`${API_BASE_URL}/checkout`, {
+      const checkoutRes = await fetch(`${API_BASE_URL}/checkout`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, paymentMethod: 'cash' }),
       });
 
-      // fallback to token if cookie-auth fails
-      let finalRes = res;
-      if (!res.ok) {
+      let finalRes = checkoutRes;
+      if (!checkoutRes.ok) {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Authentication required');
         finalRes = await fetch(`${API_BASE_URL}/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ items }),
+          body: JSON.stringify({ items, paymentMethod: 'cash' }),
         });
       }
 
@@ -77,12 +83,9 @@ export default function Cart() {
       }
 
       const data = await finalRes.json();
-      // data: { order, receipt: base64 }
       toast.success('Checkout completed');
-      // navigate to receipt page and pass data via location state; also save to sessionStorage as fallback
       const receiptPayload = { order: data.order, receipt: data.receipt || null };
       try { sessionStorage.setItem('lastReceipt', JSON.stringify(receiptPayload)); } catch (e) { /* ignore */ }
-      // clear client cart and navigate to receipt
       clearCart();
       setItems([]);
       navigate('/receipt', { state: receiptPayload });
@@ -161,6 +164,33 @@ export default function Cart() {
               <div className="text-2xl font-bold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(total)}</div>
             </div>
 
+            {/* Payment Method Selection */}
+            <div className="hidden sm:block p-4 bg-surface-600 rounded">
+              <div className="text-lg font-semibold mb-2">Payment Method</div>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="cash"
+                    checked={paymentMethod === 'cash'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mr-2"
+                  />
+                  Cash
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="card"
+                    checked={paymentMethod === 'card'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mr-2"
+                  />
+                  Card
+                </label>
+              </div>
+            </div>
+
             <div className="hidden sm:flex justify-end gap-3">
               <button 
                 onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} 
@@ -171,7 +201,7 @@ export default function Cart() {
               </button>
               <button 
                 onClick={handlePay} 
-                disabled={paymentLoading}
+                disabled={paymentLoading || total === 0}
                 className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {paymentLoading ? (
@@ -180,40 +210,68 @@ export default function Cart() {
                     Processing...
                   </>
                 ) : (
-                  'Pay Now'
+                  paymentMethod === 'card' ? 'Proceed to Payment' : 'Pay Now'
                 )}
               </button>
             </div>
 
             {/* Mobile sticky checkout bar */}
             <div className="fixed inset-x-0 bottom-0 bg-background-900 border-t border-secondary-400 p-3 sm:hidden">
-              <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm text-text-secondary">Total</div>
-                  <div className="text-lg font-bold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(total)}</div>
+              <div className="max-w-4xl mx-auto">
+                {/* Payment Method Selection */}
+                <div className="mb-2">
+                  <div className="text-sm font-semibold mb-1">Payment Method</div>
+                  <div className="flex gap-4">
+                    <label className="flex items-center text-sm">
+                      <input
+                        type="radio"
+                        value="cash"
+                        checked={paymentMethod === 'cash'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-1"
+                      />
+                      Cash
+                    </label>
+                    <label className="flex items-center text-sm">
+                      <input
+                        type="radio"
+                        value="card"
+                        checked={paymentMethod === 'card'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-1"
+                      />
+                      Card
+                    </label>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} 
-                    disabled={paymentLoading}
-                    className="px-3 py-2 bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Clear
-                  </button>
-                  <button 
-                    onClick={handlePay} 
-                    disabled={paymentLoading}
-                    className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {paymentLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      'Pay'
-                    )}
-                  </button>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm text-text-secondary">Total</div>
+                    <div className="text-lg font-bold">{new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(total)}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => { clearCart(); setItems([]); toast.success('Cart cleared'); }} 
+                      disabled={paymentLoading}
+                      className="px-3 py-2 bg-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Clear
+                    </button>
+                    <button 
+                      onClick={handlePay} 
+                      disabled={paymentLoading || total === 0}
+                      className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {paymentLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        paymentMethod === 'card' ? 'Proceed to Payment' : 'Pay'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

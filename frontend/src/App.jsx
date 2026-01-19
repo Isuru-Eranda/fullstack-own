@@ -30,6 +30,7 @@ import EditCinema from './pages/admin/EditCinema';
 import AddCinema from './pages/admin/AddCinema';
 import Snacks from './pages/snacks';
 import Cart from './pages/Cart';
+import Payment from './pages/Payment';
 import Receipt from './pages/Receipt';
 import Orders from './pages/Orders';
 import SnackOverviewPage from './pages/snackoverviewpage';
@@ -65,6 +66,7 @@ function AppContent() {
       <Route path="/snacksoverview/:snackid" element={<SnackOverviewPage />} />
       <Route path="/concessions" element={<Navigate to="/snacks" replace />} />
       <Route path="/cart" element={<Cart />} />
+      <Route path="/payment" element={<Payment />} />
       <Route path="/receipt" element={<Receipt />} />
       <Route path="/orders" element={<Orders />} />
 

@@ -31,6 +31,21 @@ exports.listCinemas = async (req, res) => {
   }
 };
 
+// Get single cinema
+exports.getCinema = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cinema = await Cinema.findById(id);
+    if (!cinema) {
+      return res.status(404).json({ message: 'Cinema not found' });
+    }
+    res.status(200).json({ data: cinema });
+  } catch (err) {
+    console.error('getCinema error', err);
+    res.status(500).json({ message: 'Failed to get cinema' });
+  }
+};
+
 // Update cinema
 exports.updateCinema = async (req, res) => {
   try {
