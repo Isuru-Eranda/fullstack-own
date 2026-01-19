@@ -1,5 +1,5 @@
 const express = require('express');
-const { createSnack, getproducts, deleteSnack, updatesnack, getSnackinfo } = require('../controllers/snackController');
+const { createSnack, getproducts, deleteSnack, updatesnack, getSnackinfo, migrateSnackImagesToB2 } = require('../controllers/snackController');
 const { protect } = require('../middleware/auth');
 const { uploadMultiple } = require('../middleware/upload');
 
@@ -11,6 +11,9 @@ router.get('/', getproducts);
 router.delete('/:snackid', protect, deleteSnack);
 router.put('/:snackid', protect, uploadMultiple('images', 10, 'snacks'), updatesnack);
 router.get('/:snackid', getSnackinfo);
+
+// Migration route for admin to migrate Supabase images to B2
+router.post('/migrate-images', protect, migrateSnackImagesToB2);
 
 module.exports = router;
 

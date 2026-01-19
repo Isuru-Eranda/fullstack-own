@@ -20,6 +20,10 @@ const purchaseRoutes = require("./routes/purchaseRoute");
 const checkoutRoutes = require("./routes/checkout");
 const ordersRoutes = require("./routes/orders");
 
+// Import middleware
+const { protect } = require("./middleware/auth");
+const { uploadSingle } = require("./middleware/upload");
+
 // Import models
 const Show = require("./models/Show");
 
@@ -63,6 +67,15 @@ app.use('/api/snacks', snackRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', ordersRoutes);
+
+// General upload route for any file uploads
+app.post('/api/upload', protect, uploadSingle('file', 'uploads'), (req, res) => {
+  if (req.file && req.file.b2Url) {
+    res.json({ success: true, url: req.file.b2Url });
+  } else {
+    res.status(400).json({ success: false, message: 'Upload failed' });
+  }
+});
 
 // Health check
 app.get("/api/health", (req, res) => {

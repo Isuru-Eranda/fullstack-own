@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import MediaUpload from "../../utils/mediaupload";
 import { AuthContext } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/api";
 
