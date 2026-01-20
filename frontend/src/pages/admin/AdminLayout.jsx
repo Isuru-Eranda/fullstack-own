@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from '../../hooks/useNavigate';
@@ -9,7 +9,12 @@ import Logo from '../../components/Logo';
 export default function AdminLayout() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const isActiveLink = (path) => {
+    return location.pathname === path;
+  };
 
   const confirmLogout = async () => {
     setShowLogoutModal(false);
@@ -54,14 +59,14 @@ export default function AdminLayout() {
         <div className="grid grid-cols-4 gap-8">
           <aside className="col-span-1 bg-surface-600 rounded-xl p-4 border border-surface-400/30 flex flex-col justify-between">
             <nav className="space-y-2">
-              <a href="/admin-dashboard" className="block px-3 py-2 rounded hover:bg-surface-500">Overview</a>
-              <a href="/admin-dashboard/cinemas" className="block px-3 py-2 rounded hover:bg-surface-500">Cinemas</a>
-              <a href="/admin-dashboard/halls" className="block px-3 py-2 rounded hover:bg-surface-500">Halls</a>
-              <a href="/admin-dashboard/showtime-management" className="block px-3 py-2 rounded hover:bg-surface-500">Showtimes</a>
-              <a href="/admin-dashboard/user-management" className="block px-3 py-2 rounded hover:bg-surface-500">Users</a>
-              <a href="/admin-dashboard/snack-management" className="block px-3 py-2 rounded hover:bg-surface-500">Snacks</a>
-              <a href="/admin-dashboard/addsnack" className="block px-3 py-2 rounded hover:bg-surface-500">Add Snacks</a>
-              <a href="/admin-dashboard/order-management" className="block px-3 py-2 rounded hover:bg-surface-500">Order Management</a>
+              <a href="/admin-dashboard" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Overview</a>
+              <a href="/admin-dashboard/cinemas" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/cinemas') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Cinemas</a>
+              <a href="/admin-dashboard/halls" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/halls') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Halls</a>
+              <a href="/admin-dashboard/showtime-management" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/showtime-management') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Showtimes</a>
+              <a href="/admin-dashboard/user-management" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/user-management') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Users</a>
+              <a href="/admin-dashboard/snack-management" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/snack-management') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Snacks</a>
+              <a href="/admin-dashboard/addsnack" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/addsnack') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Add Snacks</a>
+              <a href="/admin-dashboard/order-management" className={`block px-3 py-2 rounded ${isActiveLink('/admin-dashboard/order-management') ? 'bg-surface-500 text-text-primary' : 'hover:bg-surface-500'}`}>Order Management</a>
             </nav>
 
             <div className="mt-6">
