@@ -14,6 +14,23 @@ exports.getUserOrders = async (req, res) => {
   }
 };
 
+// Get a single order for the current user (used by frontend when opening review link)
+exports.getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, userId: req.user._id })
+      .populate({ path: 'bookings', populate: { path: 'showtimeId', populate: [{ path: 'movieId' }, { path: 'cinemaId' }, { path: 'hallId' }] } })
+      .populate('purchase');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.status(200).json(order);
+  } catch (err) {
+    console.error('Get order by id error:', err);
+    res.status(500).json({ message: 'Server error fetching order' });
+  }
+};
+
 // Get all orders for admin
 exports.getAllOrders = async (req, res) => {
   try {

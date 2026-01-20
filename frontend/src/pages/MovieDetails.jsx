@@ -69,8 +69,7 @@ export default function MovieDetails() {
     }
   };
 
-  // Remove 'showtime' parameter as it is unused to fix lint error
-  const handleBuyTickets = () => {
+  const handleBuyTickets = (showtime = null) => {
     if (!user) {
       // Redirect to login if not authenticated
       alert('Please login to book tickets');
@@ -183,7 +182,7 @@ export default function MovieDetails() {
             {/* Buy Tickets Button - Primary CTA */}
             <div className="mb-8">
               <button
-                  onClick={handleBuyTickets}
+                  onClick={() => handleBuyTickets()}
                   className="w-full sm:w-auto px-6 sm:px-12 py-4 bg-primary-500 text-text-primary font-bold text-lg uppercase tracking-widest hover:bg-primary-600 transition border border-secondary-400 shadow-lg rounded-lg"
                 >
                   🎫 Buy Tickets
@@ -276,16 +275,16 @@ export default function MovieDetails() {
                   <p className="text-text-muted uppercase text-xs tracking-wider mb-1">Status</p>
                   <p className="font-bold">
                     <span className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md inline-block ${
-                      movie.status === 'now_showing' || movie.status === 'Now Showing' 
-                        ? 'bg-green-500/20 text-green-400 border border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.5)]' :
-                      movie.status === 'upcoming' || movie.status === 'Coming Soon' 
-                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' :
-                      'bg-red-500/20 text-red-400 border border-red-400 shadow-[0_0_15px_rgba(248,113,113,0.5)]'
+                      movie.status === 'now_showing' || movie.status === 'Now Showing'
+                        ? 'bg-green-500/20 text-green-400 border border-green-400 shadow-[0_0_15px_rgba(74,222,128,0.5)]'
+                        : movie.status === 'upcoming' || movie.status === 'Coming Soon'
+                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]'
+                        : 'bg-red-500/20 text-red-400 border-red-400 shadow-[0_0_15px_rgba(248,113,113,0.5)]'
                     }`}>
-                      {movie.status === 'now_showing' ? 'Now Showing' :
-                       movie.status === 'upcoming' ? 'Coming Soon' :
-                       movie.status === 'archived' ? 'Archived' :
-                       movie.status}
+                      {movie.status === 'now_showing' ? 'Now Showing'
+                        : movie.status === 'upcoming' ? 'Coming Soon'
+                        : movie.status === 'archived' ? 'Archived'
+                        : movie.status}
                     </span>
                   </p>
                 </div>
@@ -377,9 +376,9 @@ export default function MovieDetails() {
                             {review.userId?.name || 'Anonymous'}
                           </p>
                           <div className="flex gap-1 text-sm text-accent-gold">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star}>
-                                {star <= review.rating ? '★' : '☆'}
+                            {Array.from({ length: 5 }, (_, i) => (
+                              <span key={i}>
+                                {i < review.rating ? '★' : '☆'}
                               </span>
                             ))}
                           </div>
