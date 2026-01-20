@@ -373,7 +373,11 @@ export default function MovieDetails() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-bold uppercase text-sm text-text-primary">
-                            {review.userId?.name || 'Anonymous'}
+                            {(
+                              review.userId
+                                ? ((review.userId.firstName || '') + ' ' + (review.userId.lastName || '')).trim() || review.userId.email || 'Anonymous'
+                                : 'Anonymous'
+                            )}
                           </p>
                           <div className="flex gap-1 text-sm text-accent-gold">
                             {Array.from({ length: 5 }, (_, i) => (

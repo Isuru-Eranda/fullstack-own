@@ -9,7 +9,8 @@ router.get('/movie/:movieId', async (req, res) => {
   try {
     const { movieId } = req.params;
     const reviews = await Review.find({ movieId })
-      .populate('userId', 'name')
+      // populate user's first and last name (User schema uses firstName/lastName)
+      .populate('userId', 'firstName lastName email')
       .sort({ createdAt: -1 });
     res.json(reviews);
   } catch (error) {
@@ -37,7 +38,7 @@ router.post('/', protect, async (req, res) => {
     });
 
     await review.save();
-    await review.populate('userId', 'name');
+    await review.populate('userId', 'firstName lastName email');
 
     res.status(201).json(review);
   } catch (error) {
@@ -59,7 +60,7 @@ router.put('/:reviewId', protect, async (req, res) => {
       { _id: reviewId, userId },
       { rating, comment },
       { new: true }
-    ).populate('userId', 'name');
+    ).populate('userId', 'firstName lastName email');
 
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
