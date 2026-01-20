@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import LoadingLogo from '../components/LoadingLogo';
 
@@ -15,8 +15,9 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (!user) {
-    // Not logged in, redirect to login
-    return <Navigate to="/login" replace />;
+    // Not logged in, redirect to login and preserve the current location
+    const location = useLocation();
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (requireAdmin && user.role !== 'admin') {

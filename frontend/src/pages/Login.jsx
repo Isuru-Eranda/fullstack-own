@@ -1,4 +1,5 @@
 import { useState, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from '../hooks/useNavigate';
 import { toast } from 'react-toastify';
@@ -11,6 +12,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,9 +48,12 @@ export default function Login() {
       const isAdmin = data.user.role === 'admin';
       toast.success(`Welcome back${isAdmin ? ', Admin' : ''}, ${data.user.firstName}! You have successfully logged in.`);
       
-      // Navigate based on user role
+      // Navigate back to previous page if available, otherwise based on role
+      const from = location.state?.from?.pathname;
       setTimeout(() => {
-        if (data.user.role === 'admin') {
+        if (from && from !== '/login' && from !== '/register') {
+          navigate(from);
+        } else if (data.user.role === 'admin') {
           navigate('/admin-dashboard');
         } else {
           navigate('/');
