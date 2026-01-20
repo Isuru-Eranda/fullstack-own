@@ -41,7 +41,7 @@ export default function CreateShowtime() {
     setLoading(true);
     try {
       const [mRes, hRes, cRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/movies`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}/movies?nowShowing=true`, { credentials: 'include' }),
         fetch(`${API_BASE_URL}/halls`, { credentials: 'include' }),
         fetch(`${API_BASE_URL}/cinemas`, { credentials: 'include' }),
       ]);
