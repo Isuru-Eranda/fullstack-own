@@ -5,6 +5,7 @@ import { API_BASE_URL } from "../../utils/api";
 import Modal from "../../components/Modal";
 import BackButton from "../../components/BackButton";
 import LoadingLogo from "../../components/LoadingLogo";
+import { toast } from 'react-toastify';
 
 export default function ShowtimeManagement() {
   const { user } = useContext(AuthContext);
@@ -17,6 +18,7 @@ export default function ShowtimeManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Filter states
   const location = useLocation();
@@ -234,6 +236,7 @@ export default function ShowtimeManagement() {
 
   const handleCreateShowtime = async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    setSubmitting(true);
     const token = localStorage.getItem("token");
     const headers = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -324,7 +327,10 @@ export default function ShowtimeManagement() {
         }
       }
 
-      if (created.length > 0) setSuccess(`Created ${created.length} showtime${created.length > 1 ? 's' : ''}`);
+      if (created.length > 0) {
+        setSuccess(`Created ${created.length} showtime${created.length > 1 ? 's' : ''}`);
+        toast.success(`Showtime${created.length > 1 ? 's' : ''} created successfully!`);
+      }
       if (errors.length > 0) setError(`Failed for ${errors.length} hall${errors.length > 1 ? 's' : ''}: ${errors.map(e => e.message).join('; ')}`);
 
       setShowCreateModal(false);
@@ -333,12 +339,15 @@ export default function ShowtimeManagement() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (_err) {
       setError(_err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleUpdateShowtime = async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (!currentShowtime) return;
+    setSubmitting(true);
 
     try {
       const token = localStorage.getItem("token");
@@ -405,6 +414,7 @@ export default function ShowtimeManagement() {
       }
 
       setSuccess("Showtime updated successfully!");
+      toast.success("Showtime updated successfully!");
       setShowEditModal(false);
       resetForm();
       fetchShowtimes();
@@ -412,6 +422,8 @@ export default function ShowtimeManagement() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (_err) {
       setError(_err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -865,8 +877,9 @@ export default function ShowtimeManagement() {
         title="Schedule New Showtime"
         onClose={() => setShowCreateModal(false)}
         onConfirm={handleCreateShowtime}
-        confirmText="Create Showtime"
+        confirmText={submitting ? "Processing..." : "Create Showtime"}
         confirmDisabled={
+          submitting ||
           !formData.movieId ||
           !(Array.isArray(formData.hallIds) ? formData.hallIds.length > 0 : !!formData.hallId) ||
           !formData.startTime ||
@@ -1065,8 +1078,9 @@ export default function ShowtimeManagement() {
         title="Edit Showtime"
         onClose={() => setShowEditModal(false)}
         onConfirm={handleUpdateShowtime}
-        confirmText="Update Showtime"
+        confirmText={submitting ? "Processing..." : "Update Showtime"}
         confirmDisabled={
+          submitting ||
           !formData.movieId ||
           !formData.hallId ||
           !formData.startTime ||

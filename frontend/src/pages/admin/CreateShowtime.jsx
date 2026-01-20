@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../utils/api';
 import BackButton from '../../components/BackButton';
 import LoadingLogo from '../../components/LoadingLogo';
+import { toast } from 'react-toastify';
 
 export default function CreateShowtime() {
   const { user } = useContext(AuthContext);
@@ -16,6 +17,7 @@ export default function CreateShowtime() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     movieId: '',
@@ -140,6 +142,7 @@ export default function CreateShowtime() {
 
   const handleCreateShowtime = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    setSubmitting(true);
     const token = localStorage.getItem('token');
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -210,12 +213,17 @@ export default function CreateShowtime() {
         } catch (err) { errors.push({ hallId, message: err.message }); }
       }
 
-      if (created.length > 0) setSuccess(`Created ${created.length} showtime${created.length>1?'s':''}`);
+      if (created.length > 0) {
+        setSuccess(`Created ${created.length} showtime${created.length>1?'s':''}`);
+        toast.success(`Showtime${created.length>1?'s':''} created successfully!`);
+      }
       if (errors.length > 0) setError(`Failed for ${errors.length} hall(s): ${errors.map(e => e.message).join('; ')}`);
 
       setTimeout(() => { if (created.length>0) navigate('/admin-dashboard/showtime-management'); }, 800);
     } catch (err) {
       setError(err.message || 'Failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -317,7 +325,9 @@ export default function CreateShowtime() {
 
           <div className="flex gap-3">
             <button type="button" onClick={() => navigate('/admin-dashboard/showtime-management')} className="px-4 py-2 bg-gray-700 text-white rounded">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-primary-500 text-white rounded">Create Showtime</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 bg-primary-500 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+              {submitting ? 'Processing...' : 'Create Showtime'}
+            </button>
           </div>
         </form>
       </div>

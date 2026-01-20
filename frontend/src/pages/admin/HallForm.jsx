@@ -3,6 +3,7 @@ import { createHall, getHall, updateHall } from '../../services/hallService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../utils/api';
 import LoadingLogo from '../../components/LoadingLogo';
+import { toast } from 'react-toastify';
 
 const HallForm = () => {
   const { id } = useParams();
@@ -21,6 +22,7 @@ const HallForm = () => {
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState('');
   const [cinemas, setCinemas] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -91,16 +93,19 @@ const HallForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     setError('');
 
     if (!Array.isArray(form.cinemaIds) || form.cinemaIds.length === 0) {
       setError('Please select at least one cinema');
+      setSubmitting(false);
       return;
     }
 
     // For editing, only allow one cinema
     if (isEdit && form.cinemaIds.length > 1) {
       setError('A hall can only belong to one cinema. Please select only one cinema when editing.');
+      setSubmitting(false);
       return;
     }
 
@@ -139,12 +144,15 @@ const HallForm = () => {
 
       if (createdHalls.length > 0) {
         setError(''); // Clear any previous errors
+        toast.success(isEdit ? 'Hall updated successfully!' : 'Hall(s) created successfully!');
         navigate('/admin-dashboard/halls');
       } else if (errors.length > 0) {
         setError(`Errors: ${errors.join('; ')}`);
       }
     } catch (err) {
       setError(err.message || 'Failed to save hall');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -352,9 +360,10 @@ const HallForm = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-primary-500 text-text-primary rounded font-bold uppercase tracking-wide hover:bg-primary-600 transition"
+                  disabled={submitting}
+                  className="px-6 py-2 bg-primary-500 text-text-primary rounded font-bold uppercase tracking-wide hover:bg-primary-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isEdit ? 'Save Changes' : 'Create Hall'}
+                  {submitting ? 'Processing...' : (isEdit ? 'Save Changes' : 'Create Hall')}
                 </button>
               </div>
             </form>
