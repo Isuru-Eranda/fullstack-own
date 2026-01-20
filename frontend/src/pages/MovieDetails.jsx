@@ -363,7 +363,8 @@ export default function MovieDetails() {
                 <p className="text-text-secondary">Be the first to review this movie!</p>
               </div>
             ) : (
-              reviews.map((review) => (
+              // Show only the latest 3 reviews on the movie page; averages use full `reviews`
+              reviews.slice(0, 3).map((review) => (
                 <div key={review._id} className="p-6 border border-secondary-400 bg-surface-600 rounded-lg">
                   <div className="flex items-start gap-4 mb-3">
                     <div className="w-12 h-12 rounded-full bg-surface-500 flex items-center justify-center border-2 border-secondary-400">
@@ -401,12 +402,7 @@ export default function MovieDetails() {
             )}
           </div>
 
-          {/* Load More Button */}
-          <div className="text-center">
-            <button className="px-8 py-3 border border-secondary-400 bg-surface-600 text-text-primary font-bold uppercase tracking-wider hover:bg-primary-500 transition rounded-lg">
-              Load More Reviews
-            </button>
-          </div>
+          {/* Removed Load More Button — only latest 3 reviews are shown here */}
         </div>
       </div>
 
