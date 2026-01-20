@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import LoadingLogo from '../components/LoadingLogo';
 import { fetchMovieById, deleteMovie } from '../services/movieService';
 import { API_BASE_URL } from '../utils/api';
+import toast from 'react-hot-toast';
 
 export default function MovieDetails() {
   // Get movie ID from URL path (e.g., /movies/123)
@@ -19,6 +20,11 @@ export default function MovieDetails() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState('');
+  const [showDeleteReviewModal, setShowDeleteReviewModal] = useState(false);
+  const [deleteReviewId, setDeleteReviewId] = useState(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -382,10 +388,97 @@ export default function MovieDetails() {
                           {new Date(review.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <p className="text-sm text-text-secondary leading-relaxed">
-                        {review.comment}
-                      </p>
+                      {editingReviewId === review._id ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm text-text-muted">Rating:</label>
+                            <select
+                              value={editRating}
+                              onChange={(e) => setEditRating(Number(e.target.value))}
+                              className="bg-surface-500 border border-secondary-400 rounded px-2 py-1"
+                            >
+                              {[5,4,3,2,1].map((s) => (
+                                <option key={s} value={s}>{s} ★</option>
+                              ))}
+                            </select>
+                          </div>
+                          <textarea
+                            value={editComment}
+                            onChange={(e) => setEditComment(e.target.value)}
+                            className="w-full bg-surface-500 border border-secondary-400 rounded p-2 text-sm text-text-secondary"
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API_BASE_URL}/reviews/${editingReviewId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ rating: editRating, comment: editComment }),
+                                  });
+                                  if (!res.ok) throw new Error('Failed to update review');
+                                  const updated = await res.json();
+                                  setReviews((prev) => prev.map(r => r._id === updated._id ? updated : r));
+                                  setEditingReviewId(null);
+                                  toast.success('Review updated successfully');
+                                } catch (err) {
+                                  toast.error(err.message || 'Failed to update review');
+                                }
+                              }}
+                              className="px-3 py-1 bg-primary-500 text-text-primary rounded font-bold text-sm"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingReviewId(null)}
+                              className="px-3 py-1 bg-surface-500 text-text-secondary rounded border border-secondary-400 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            {review.comment}
+                          </p>
+                        </>
+                      )}
                     </div>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {/* Show edit/delete only to review author */}
+                    {user && (() => {
+                      const rid = review.userId?._id || review.userId;
+                      if (String(rid) === String(user._id)) {
+                        return (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingReviewId(review._id);
+                                setEditRating(review.rating || 5);
+                                setEditComment(review.comment || '');
+                              }}
+                              className="px-3 py-1 bg-accent-blue text-white rounded text-sm font-bold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteReviewId(review._id);
+                                setShowDeleteReviewModal(true);
+                              }}
+                              className="px-3 py-1 bg-semantic-error text-white rounded text-sm font-bold"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               ))
@@ -403,6 +496,31 @@ export default function MovieDetails() {
         message={`Are you sure you want to delete "${movie.title}"? This action cannot be undone.`}
         onClose={() => setDeleteModal(false)}
         onConfirm={handleDelete}
+        confirmText="Delete"
+        theme="default"
+      />
+
+      {/* Review Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteReviewModal}
+        title="Delete Review"
+        message="Are you sure you want to delete this review? This action cannot be undone."
+        onClose={() => { setShowDeleteReviewModal(false); setDeleteReviewId(null); }}
+        onConfirm={async () => {
+          try {
+            const res = await fetch(`${API_BASE_URL}/reviews/${deleteReviewId}`, {
+              method: 'DELETE',
+              credentials: 'include',
+            });
+            if (!res.ok) throw new Error('Failed to delete review');
+            setReviews(prev => prev.filter(r => r._id !== deleteReviewId));
+            setShowDeleteReviewModal(false);
+            setDeleteReviewId(null);
+            toast.success('Review deleted');
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete review');
+          }
+        }}
         confirmText="Delete"
         theme="default"
       />
