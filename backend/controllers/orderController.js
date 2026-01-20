@@ -65,6 +65,21 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
+// Delete order by admin
+exports.deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    await Order.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Order deleted successfully' });
+  } catch (err) {
+    console.error('Delete order error:', err);
+    res.status(500).json({ message: 'Server error deleting order' });
+  }
+};
+
 // Get receipt for a specific order
 exports.getOrderReceipt = async (req, res) => {
   try {

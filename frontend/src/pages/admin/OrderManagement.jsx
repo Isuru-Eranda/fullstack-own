@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../utils/api';
 import { toast } from 'react-toastify';
+import Modal from '../../components/Modal';
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, orderId: null });
+  const [cancelModal, setCancelModal] = useState({ isOpen: false, orderId: null });
 
   useEffect(() => {
     fetchOrders();
@@ -30,7 +33,13 @@ export default function OrderManagement() {
   };
 
   const cancelOrder = async (orderId) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
+    setCancelModal({ isOpen: true, orderId });
+  };
+
+  const confirmCancelOrder = async () => {
+    const orderId = cancelModal.orderId;
+    setCancelModal({ isOpen: false, orderId: null });
+    
     try {
       const res = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
         method: 'PUT',
@@ -46,6 +55,32 @@ export default function OrderManagement() {
     } catch (err) {
       console.error('Error cancelling order:', err);
       toast.error('Error cancelling order');
+    }
+  };
+
+  const deleteOrder = async (orderId) => {
+    setDeleteModal({ isOpen: true, orderId });
+  };
+
+  const confirmDeleteOrder = async () => {
+    const orderId = deleteModal.orderId;
+    setDeleteModal({ isOpen: false, orderId: null });
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        toast.success('Order deleted successfully');
+        fetchOrders(); // Refresh the list
+      } else {
+        const error = await res.json();
+        toast.error(error.message || 'Failed to delete order');
+      }
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      toast.error('Error deleting order');
     }
   };
 
@@ -96,17 +131,45 @@ export default function OrderManagement() {
                   {order.status === 'active' && (
                     <button
                       onClick={() => cancelOrder(order._id)}
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded mr-2"
                     >
                       Cancel Order
                     </button>
                   )}
+                  <button
+                    onClick={() => deleteOrder(order._id)}
+                    className="px-3 py-1 bg-red-800 hover:bg-red-900 text-white rounded"
+                  >
+                    Delete Order
+                  </button>
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Cancel Order Modal */}
+      <Modal
+        isOpen={cancelModal.isOpen}
+        title="Cancel Order"
+        message="Are you sure you want to cancel this order?"
+        onClose={() => setCancelModal({ isOpen: false, orderId: null })}
+        onConfirm={confirmCancelOrder}
+        confirmText="Cancel Order"
+        theme="default"
+      />
+
+      {/* Delete Order Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        title="Delete Order"
+        message="Are you sure you want to permanently delete this order? This action cannot be undone."
+        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onConfirm={confirmDeleteOrder}
+        confirmText="Delete Order"
+        theme="default"
+      />
     </div>
   );
 }
