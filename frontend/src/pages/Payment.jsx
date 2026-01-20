@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { API_BASE_URL } from '../utils/api';
+import { clearCart } from '../utils/cart';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import LoadingLogo from '../components/LoadingLogo';
@@ -96,6 +97,9 @@ function PaymentForm({ items, total }) {
 
       const data = await checkoutFinalRes.json();
       toast.success('Payment and checkout completed');
+
+      // Clear cart after successful payment
+      clearCart();
 
       // Navigate to receipt
       const receiptPayload = { order: data.order, receipt: data.receipt || null };
