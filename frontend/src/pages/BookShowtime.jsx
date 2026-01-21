@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from '../hooks/useNavigate';
 import { ToastContainer, toast } from 'react-toastify';
 import { AuthContext } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import LoadingLogo from '../components/LoadingLogo';
 import HallLayoutPreview from '../components/HallLayoutPreview';
 import { API_BASE_URL } from '../utils/api';
 import { getCart, addTicketsToCart } from '../utils/cart';
+import io from 'socket.io-client';
 
 export default function BookShowtime() {
   const showtimeId = window.location.pathname.split('/')[2];
@@ -24,60 +25,9 @@ export default function BookShowtime() {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
-
-  // Validate showtimeId
-  useEffect(() => {
-    if (!showtimeId || showtimeId === 'undefined' || showtimeId === 'null') {
-      toast.error('Invalid showtime ID');
-      navigate('/movies');
-      return;
-    }
-    fetchShowtime();
-  }, [showtimeId]);
-
-  useEffect(() => {
-    // load cart quick summary
-    const cart = getCart();
-    setCartItemsCount(cart.reduce((s, i) => s + (i.qty || 0), 0));
-    setCartTotal(cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 0)), 0));
-  }, []);
-
-  // update cart summary when returning from concessions
-  useEffect(() => {
-    const handleVisibility = () => {
-      const cart = getCart();
-      setCartItemsCount(cart.reduce((s, i) => s + (i.qty || 0), 0));
-      setCartTotal(cart.reduce((s, i) => s + (Number(i.price || 0) * (i.qty || 0)), 0));
-    };
-    window.addEventListener('visibilitychange', handleVisibility);
-    return () => window.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
-
-  useEffect(() => {
-    const fetchCinema = async () => {
-      if (!cinemaQueryId) return;
-      try {
-        const res = await fetch(`${API_BASE_URL}/cinemas/${cinemaQueryId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setCinema(data.data || data);
-          return;
-        }
-        // Fallback: if individual endpoint not available, fetch list and find
-        const listRes = await fetch(`${API_BASE_URL}/cinemas`);
-        if (!listRes.ok) return;
-        const listData = await listRes.json();
-        const list = listData.data || listData.cinemas || listData;
-        if (Array.isArray(list)) {
-          const found = list.find(c => String(c._id) === String(cinemaQueryId));
-          if (found) setCinema(found);
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
-    fetchCinema();
-  }, [cinemaQueryId]);
+  const [seatStatuses, setSeatStatuses] = useState([]);
+  const [socket, setSocket] = useState(null);
+  const [showId, setShowId] = useState(null);
 
   const fetchShowtime = async () => {
     // Validate showtimeId before making API call
@@ -93,12 +43,75 @@ export default function BookShowtime() {
       if (!res.ok) throw new Error('Showtime not found');
       const data = await res.json();
       setShowtime(data.data);
+      
+      let showIdToUse = data.data.showId;
+      if (!showIdToUse) {
+        // For existing showtimes without showId, use showtimeId as showId
+        showIdToUse = showtimeId;
+      }
+      setShowId(showIdToUse);
     } catch (err) {
       toast.error(err.message || 'Unable to load showtime');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchSeatStatuses = useCallback(async () => {
+    if (!showId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/seats/${showId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSeatStatuses(data);
+      }
+    } catch (error) {
+      console.error('Error fetching seat statuses:', error);
+    }
+  }, [showId]);
+
+  // Socket.IO connection for real-time seat updates
+  useEffect(() => {
+    if (showtime && showId) {
+      // Connect to Socket.IO
+      const newSocket = io(API_BASE_URL.replace('/api', ''), {
+        transports: ['websocket', 'polling']
+      });
+      setSocket(newSocket);
+
+      // Join the show room
+      newSocket.emit('joinShow', showId);
+
+      // Listen for seat updates
+      newSocket.on('seatUpdate', (update) => {
+        setSeatStatuses(prevStatuses => {
+          const updated = [...prevStatuses];
+          const index = updated.findIndex(seat => seat.seatLabel === update.seatLabel);
+          if (index !== -1) {
+            updated[index] = { ...updated[index], status: update.status };
+          }
+          return updated;
+        });
+      });
+
+      // Fetch initial seat statuses
+      fetchSeatStatuses();
+
+      return () => {
+        newSocket.disconnect();
+      };
+    }
+  }, [showtime, showId, fetchSeatStatuses]);
+
+  // Validate showtimeId
+  useEffect(() => {
+    if (!showtimeId || showtimeId === 'undefined' || showtimeId === 'null') {
+      toast.error('Invalid showtime ID');
+      navigate('/movies');
+      return;
+    }
+    fetchShowtime();
+  }, [showtimeId]);
 
   // Validate cinema selection after showtime is loaded
   useEffect(() => {
@@ -126,17 +139,64 @@ export default function BookShowtime() {
 
   const hallLayout = showtime.hallId?.layout || { rows: 0, cols: 0, seats: [] };
 
-  const handleSeatClick = (seat) => {
+  const handleSeatClick = async (seat) => {
+    if (!user) {
+      toast.info('Please login to select seats');
+      setTimeout(() => navigate('/login'), 600);
+      return;
+    }
+
+    const currentStatus = seatStatuses.find(s => s.seatLabel === seat.label)?.status || 'AVAILABLE';
+
+    if (currentStatus === 'BOOKED') {
+      toast.error('This seat is already booked');
+      return;
+    }
+
     if (selectedSeats.includes(seat.label)) {
-      // Deselect
-      setSelectedSeats(selectedSeats.filter(s => s !== seat.label));
+      // Deselect - unlock the seat
+      try {
+        const res = await fetch(`${API_BASE_URL}/seats/unlock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ showId: showId, seatLabel: seat.label })
+        });
+        if (res.ok) {
+          setSelectedSeats(selectedSeats.filter(s => s !== seat.label));
+        } else {
+          toast.error('Failed to unlock seat');
+        }
+      } catch (error) {
+        toast.error('Error unlocking seat');
+      }
     } else {
-      // Select
+      // Select - lock the seat
       if (selectedSeats.length >= totalTickets) {
         toast.info(`You can only select ${totalTickets} seats`);
         return;
       }
-      setSelectedSeats([...selectedSeats, seat.label]);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/seats/lock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ showId: showId, seatLabel: seat.label })
+        });
+        if (res.ok) {
+          setSelectedSeats([...selectedSeats, seat.label]);
+        } else {
+          const error = await res.json();
+          toast.error(error.message || 'Failed to lock seat');
+        }
+      } catch (error) {
+        toast.error('Error locking seat');
+      }
     }
   };
 
@@ -192,9 +252,9 @@ export default function BookShowtime() {
         {/* Movie & Showtime Info */}
         <div className="mt-6 mb-6 bg-surface-600 p-6 rounded-lg border border-secondary-400">
           <div className="flex gap-4 items-start">
-            {showtime.movieId?.posterImage && (
+            {showtime.movieId?.posterUrl && (
               <img
-                src={showtime.movieId.posterImage}
+                src={showtime.movieId.posterUrl}
                 alt={showtime.movieId.title}
                 className="w-24 h-36 object-cover rounded-lg"
               />
@@ -223,7 +283,8 @@ export default function BookShowtime() {
               layout={hallLayout}
               onSeatClick={handleSeatClick}
               selectedSeats={selectedSeats}
-              bookedSeats={showtime.bookedSeats || []}
+              bookedSeats={seatStatuses.filter(seat => seat.status === 'BOOKED').map(seat => seat.seatLabel)}
+              lockedSeats={seatStatuses.filter(seat => seat.status === 'LOCKED').map(seat => seat.seatLabel)}
               showScreen={true}
               showLegend={true}
               interactive={true}

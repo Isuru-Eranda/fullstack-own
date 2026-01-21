@@ -39,8 +39,50 @@ exports.initializeSeats = async (req, res) => {
  * READ – Get seat map
  */
 exports.getSeatMap = async (req, res) => {
-  const show = await Show.findById(req.params.showId);
-  res.json(show.seats);
+  const { showId } = req.params;
+  
+  try {
+    let show = await Show.findById(showId);
+    
+    // If show not found by ID, try to find by showtimeId (for backward compatibility)
+    if (!show) {
+      const showtime = await require('../models/Showtime').findById(showId);
+      if (showtime) {
+        show = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime });
+        
+        // If still not found, create the Show document
+        if (!show) {
+          const Hall = require('../models/Hall');
+          const hall = await Hall.findById(showtime.hallId);
+          if (hall) {
+            const showSeats = hall.layout.seats.map(seat => ({
+              seatLabel: seat.label,
+              status: showtime.bookedSeats.includes(seat.label) ? "BOOKED" : "AVAILABLE",
+            }));
+            
+            show = await Show.create({
+              hallId: showtime.hallId,
+              showTime: showtime.startTime,
+              seats: showSeats,
+            });
+            
+            // Update the showtime with the showId
+            showtime.showId = show._id;
+            await showtime.save();
+          }
+        }
+      }
+    }
+    
+    if (!show) {
+      return res.status(404).json({ message: "Show not found" });
+    }
+    
+    res.json(show.seats);
+  } catch (error) {
+    console.error("Error getting seat map:", error);
+    res.status(500).json({ message: "Error getting seat map", error: error.message });
+  }
 };
 
 /**
@@ -51,26 +93,44 @@ exports.lockSeat = async (req, res) => {
   const userId = req.user.id;
   const io = req.app.get("io");
 
-  const show = await Show.findById(showId);
-  const seat = show.seats.find(s => s.seatLabel === seatLabel);
+  try {
+    let show = await Show.findById(showId);
+    
+    // If show not found by ID, try to find by showtimeId
+    if (!show) {
+      const showtime = await require('../models/Showtime').findById(showId);
+      if (showtime) {
+        show = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime });
+      }
+    }
+    
+    if (!show) {
+      return res.status(404).json({ message: "Show not found" });
+    }
 
-  if (!seat || seat.status !== "AVAILABLE") {
-    return res.status(409).json({ message: "Seat not available" });
+    const seat = show.seats.find(s => s.seatLabel === seatLabel);
+
+    if (!seat || seat.status !== "AVAILABLE") {
+      return res.status(409).json({ message: "Seat not available" });
+    }
+
+    seat.status = "LOCKED";
+    seat.userId = userId;
+    seat.lockedAt = new Date();
+
+    await show.save();
+
+    // 🔥 REAL-TIME UPDATE
+    io.to(showId).emit("seatUpdate", {
+      seatLabel,
+      status: "LOCKED",
+    });
+
+    res.json({ message: "Seat locked" });
+  } catch (error) {
+    console.error("Error locking seat:", error);
+    res.status(500).json({ message: "Error locking seat", error: error.message });
   }
-
-  seat.status = "LOCKED";
-  seat.userId = userId;
-  seat.lockedAt = new Date();
-
-  await show.save();
-
-  // 🔥 REAL-TIME UPDATE
-  io.to(showId).emit("seatUpdate", {
-    seatLabel,
-    status: "LOCKED",
-  });
-
-  res.json({ message: "Seat locked" });
 };
 
 /**
@@ -108,7 +168,16 @@ exports.unlockSeat = async (req, res) => {
     const userId = req.user.id;
     const io = req.app.get("io");
 
-    const show = await Show.findById(showId);
+    let show = await Show.findById(showId);
+    
+    // If show not found by ID, try to find by showtimeId
+    if (!show) {
+      const showtime = await require('../models/Showtime').findById(showId);
+      if (showtime) {
+        show = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime });
+      }
+    }
+    
     if (!show) {
       return res.status(404).json({ message: "Show not found" });
     }

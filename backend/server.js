@@ -65,6 +65,7 @@ app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/cinemas', cinemaRoutes);
 app.use('/api/snacks', snackRoutes);
+app.use('/api/seats', seatRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', ordersRoutes);

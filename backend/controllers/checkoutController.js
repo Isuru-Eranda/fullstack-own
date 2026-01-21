@@ -9,6 +9,7 @@ const Showtime = require('../models/Showtime');
 const Snack = require('../models/Snack');
 const Purchase = require('../models/Purchase');
 const Order = require('../models/Order');
+const Show = require('../models/Show');
 
 // Generate HTML email receipt
 function generateEmailReceipt(user, order, receiptBase64) {
@@ -317,6 +318,31 @@ exports.checkout = async (req, res) => {
       showtime.bookedSeats.push(...seats);
       showtime.seatsAvailable = showtime.seatsAvailable - totalTickets;
       await showtime.save({ session });
+
+      // Update Show model for real-time seat status
+      const show = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime }).session(session);
+      if (show) {
+        for (const seatLabel of seats) {
+          const seat = show.seats.find(s => s.seatLabel === seatLabel);
+          if (seat) {
+            seat.status = 'BOOKED';
+            seat.userId = user._id;
+            seat.lockedAt = null;
+          }
+        }
+        await show.save({ session });
+
+        // Emit real-time update
+        const io = req.app.get('io');
+        if (io) {
+          seats.forEach(seatLabel => {
+            io.to(showtime._id.toString()).emit('seatUpdate', {
+              seatLabel,
+              status: 'BOOKED',
+            });
+          });
+        }
+      }
 
       const bookingDocs = await Booking.create([
         {

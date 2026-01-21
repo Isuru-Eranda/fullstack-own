@@ -2,6 +2,7 @@ const Showtime = require("../models/Showtime");
 const Movie = require("../models/Movie");
 const Hall = require("../models/Hall");
 const Cinema = require("../models/Cinema");
+const Show = require("../models/Show");
 const mongoose = require("mongoose");
 
 // Utility function to validate time range
@@ -163,6 +164,19 @@ exports.createShowtime = async (req, res) => {
       });
     }
 
+    // Create the Show for real-time seat management
+    const hallData = await Hall.findById(hallId);
+    const showSeats = hallData.layout.seats.map(seat => ({
+      seatLabel: seat.label,
+      status: "AVAILABLE",
+    }));
+
+    const show = await Show.create({
+      hallId,
+      showTime: parsedStartTime,
+      seats: showSeats,
+    });
+
     // Create the showtime
     const showtime = await Showtime.create({
       movieId,
@@ -174,6 +188,7 @@ exports.createShowtime = async (req, res) => {
       price: parseFloat(price),
       totalSeats: parseInt(totalSeats),
       seatsAvailable: parseInt(totalSeats),
+      showId: show._id, // Store the Show ID in the showtime
     });
 
     // Populate and return response

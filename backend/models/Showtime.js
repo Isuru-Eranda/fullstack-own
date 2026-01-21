@@ -58,6 +58,10 @@ const showtimeSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  showId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Show",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
