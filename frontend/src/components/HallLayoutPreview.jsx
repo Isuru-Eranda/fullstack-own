@@ -9,7 +9,6 @@ const HallLayoutPreview = ({
   onSeatClick,
   selectedSeats = [],
   bookedSeats = [],
-  lockedSeats = [],
   showScreen = true,
   showLegend = true,
   interactive = false,
@@ -59,7 +58,6 @@ const HallLayoutPreview = ({
     if (!interactive || !onSeatClick) return;
     if (!seat.isActive) return;
     if (bookedSeats.includes(seat.label)) return;
-    if (lockedSeats.includes(seat.label) && !selectedSeats.includes(seat.label)) return;
 
     // Check if max seats reached
     if (maxSeats && selectedSeats.length >= maxSeats && !selectedSeats.includes(seat.label)) {
@@ -71,22 +69,17 @@ const HallLayoutPreview = ({
 
   const getSeatClassName = (seat) => {
     const isBooked = bookedSeats.includes(seat.label);
-    const isLocked = lockedSeats.includes(seat.label);
     const isSelected = selectedSeats.includes(seat.label);
     const isActive = seat.isActive !== false;
 
     let baseClasses = 'w-8 h-8 rounded-t-lg flex items-center justify-center text-xs font-medium transition-all duration-200';
 
     if (!isActive) {
-      return `${baseClasses} bg-surface-700 border border-surface-600 text-surface-500 cursor-not-allowed opacity-50`;
+      return `${baseClasses} bg-yellow-600/30 border border-yellow-500 text-yellow-200 cursor-not-allowed`;
     }
 
     if (isBooked) {
       return `${baseClasses} bg-red-600/50 border border-red-500 text-red-200 cursor-not-allowed`;
-    }
-
-    if (isLocked && !isSelected) {
-      return `${baseClasses} bg-yellow-600/50 border border-yellow-500 text-yellow-200 cursor-not-allowed`;
     }
 
     if (isSelected) {
@@ -180,14 +173,8 @@ const HallLayoutPreview = ({
               <div className="w-7 h-7 bg-red-600/50 border border-red-500 rounded-t-lg"></div>
               <span className="text-text-muted">Booked</span>
             </div>
-            {interactive && (
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-yellow-600/50 border border-yellow-500 rounded-t-lg"></div>
-                <span className="text-text-muted">Locked</span>
-              </div>
-            )}
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-surface-700 border border-surface-600 rounded-t-lg opacity-50"></div>
+              <div className="w-7 h-7 bg-yellow-600/30 border border-yellow-500 rounded-t-lg"></div>
               <span className="text-text-muted">Inactive</span>
             </div>
             {partitions.length > 0 && (
@@ -228,7 +215,6 @@ HallLayoutPreview.propTypes = {
   onSeatClick: PropTypes.func,
   selectedSeats: PropTypes.arrayOf(PropTypes.string),
   bookedSeats: PropTypes.arrayOf(PropTypes.string),
-  lockedSeats: PropTypes.arrayOf(PropTypes.string),
   showScreen: PropTypes.bool,
   showLegend: PropTypes.bool,
   interactive: PropTypes.bool,

@@ -118,6 +118,49 @@ exports.cancelBooking = async (req, res) => {
     showtime.seatsAvailable = (showtime.seatsAvailable || 0) + seatsToRelease.length;
     await showtime.save({ session });
 
+    // Update Show model for real-time seat status
+    const Show = require('../models/Show');
+    let showForUpdate = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime }).session(session);
+    if (!showForUpdate) {
+      // Create Show document if it doesn't exist
+      const Hall = require('../models/Hall');
+      const hall = await Hall.findById(showtime.hallId).session(session);
+      if (hall) {
+        const showSeats = hall.layout.seats.map(seat => ({
+          seatLabel: seat.label,
+          status: showtime.bookedSeats.includes(seat.label) ? 'BOOKED' : 'AVAILABLE',
+        }));
+        showForUpdate = await Show.create([{
+          hallId: showtime.hallId,
+          showTime: showtime.startTime,
+          seats: showSeats,
+        }], { session });
+        showForUpdate = showForUpdate[0];
+      }
+    }
+    if (showForUpdate) {
+      for (const seatLabel of seatsToRelease) {
+        const seat = showForUpdate.seats.find(s => s.seatLabel === seatLabel);
+        if (seat) {
+          seat.status = 'AVAILABLE';
+          seat.userId = null;
+          seat.lockedAt = null;
+        }
+      }
+      await showForUpdate.save({ session });
+
+      // Emit real-time update
+      const io = req.app.get('io');
+      if (io) {
+        seatsToRelease.forEach(seatLabel => {
+          io.to(showtime._id.toString()).emit('seatUpdate', {
+            seatLabel,
+            status: 'AVAILABLE',
+          });
+        });
+      }
+    }
+
     booking.canceled = true;
     await booking.save({ session });
 
@@ -140,6 +183,48 @@ exports.cancelBooking = async (req, res) => {
               st.bookedSeats = st.bookedSeats.filter(s => !seatsToRelease.includes(s));
               st.seatsAvailable = (st.seatsAvailable || 0) + seatsToRelease.length;
               await st.save({ session });
+
+              // Update Show model for real-time seat status
+              let showForOrder = await Show.findOne({ hallId: st.hallId, showTime: st.startTime }).session(session);
+              if (!showForOrder) {
+                // Create Show document if it doesn't exist
+                const Hall = require('../models/Hall');
+                const hall = await Hall.findById(st.hallId).session(session);
+                if (hall) {
+                  const showSeats = hall.layout.seats.map(seat => ({
+                    seatLabel: seat.label,
+                    status: st.bookedSeats.includes(seat.label) ? 'BOOKED' : 'AVAILABLE',
+                  }));
+                  showForOrder = await Show.create([{
+                    hallId: st.hallId,
+                    showTime: st.startTime,
+                    seats: showSeats,
+                  }], { session });
+                  showForOrder = showForOrder[0];
+                }
+              }
+              if (showForOrder) {
+                for (const seatLabel of seatsToRelease) {
+                  const seat = showForOrder.seats.find(s => s.seatLabel === seatLabel);
+                  if (seat) {
+                    seat.status = 'AVAILABLE';
+                    seat.userId = null;
+                    seat.lockedAt = null;
+                  }
+                }
+                await showForOrder.save({ session });
+
+                // Emit real-time update
+                const io = req.app.get('io');
+                if (io) {
+                  seatsToRelease.forEach(seatLabel => {
+                    io.to(st._id.toString()).emit('seatUpdate', {
+                      seatLabel,
+                      status: 'AVAILABLE',
+                    });
+                  });
+                }
+              }
             }
             b.canceled = true;
             await b.save({ session });

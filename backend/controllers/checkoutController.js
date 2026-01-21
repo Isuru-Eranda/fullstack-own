@@ -298,11 +298,40 @@ exports.checkout = async (req, res) => {
         return res.status(400).json({ message: 'Seat count must match ticket count' });
       }
 
-      // Check seat conflicts
+      // Check seat conflicts in showtime
       const conflict = seats.find(s => showtime.bookedSeats.includes(s));
       if (conflict) {
         await session.abortTransaction();
         return res.status(409).json({ message: `Seat ${conflict} already booked` });
+      }
+
+      // Check seat conflicts in Show model for real-time status
+      let showForCheck = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime }).session(session);
+      if (!showForCheck) {
+        // Create Show document if it doesn't exist
+        const hall = await require('../models/Hall').findById(showtime.hallId).session(session);
+        if (hall) {
+          const showSeats = hall.layout.seats.map(seat => ({
+            seatLabel: seat.label,
+            status: showtime.bookedSeats.includes(seat.label) ? 'BOOKED' : 'AVAILABLE',
+          }));
+          showForCheck = await Show.create([{
+            hallId: showtime.hallId,
+            showTime: showtime.startTime,
+            seats: showSeats,
+          }], { session });
+          showForCheck = showForCheck[0];
+        }
+      }
+      if (showForCheck) {
+        const showConflict = seats.find(seatLabel => {
+          const seat = showForCheck.seats.find(s => s.seatLabel === seatLabel);
+          return seat && seat.status === 'BOOKED';
+        });
+        if (showConflict) {
+          await session.abortTransaction();
+          return res.status(409).json({ message: `Seat ${showConflict} already booked` });
+        }
       }
 
       if (showtime.seatsAvailable < totalTickets) {
@@ -320,17 +349,33 @@ exports.checkout = async (req, res) => {
       await showtime.save({ session });
 
       // Update Show model for real-time seat status
-      const show = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime }).session(session);
-      if (show) {
+      let showForUpdate = await Show.findOne({ hallId: showtime.hallId, showTime: showtime.startTime }).session(session);
+      if (!showForUpdate) {
+        // Create Show document if it doesn't exist
+        const hall = await require('../models/Hall').findById(showtime.hallId).session(session);
+        if (hall) {
+          const showSeats = hall.layout.seats.map(seat => ({
+            seatLabel: seat.label,
+            status: 'AVAILABLE',
+          }));
+          showForUpdate = await Show.create([{
+            hallId: showtime.hallId,
+            showTime: showtime.startTime,
+            seats: showSeats,
+          }], { session });
+          showForUpdate = showForUpdate[0];
+        }
+      }
+      if (showForUpdate) {
         for (const seatLabel of seats) {
-          const seat = show.seats.find(s => s.seatLabel === seatLabel);
+          const seat = showForUpdate.seats.find(s => s.seatLabel === seatLabel);
           if (seat) {
             seat.status = 'BOOKED';
             seat.userId = user._id;
             seat.lockedAt = null;
           }
         }
-        await show.save({ session });
+        await showForUpdate.save({ session });
 
         // Emit real-time update
         const io = req.app.get('io');

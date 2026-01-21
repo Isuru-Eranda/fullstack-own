@@ -44,11 +44,7 @@ export default function BookShowtime() {
       const data = await res.json();
       setShowtime(data.data);
       
-      let showIdToUse = data.data.showId;
-      if (!showIdToUse) {
-        // For existing showtimes without showId, use showtimeId as showId
-        showIdToUse = showtimeId;
-      }
+      let showIdToUse = showtimeId; // Always use showtimeId for socket room
       setShowId(showIdToUse);
     } catch (err) {
       toast.error(err.message || 'Unable to load showtime');
@@ -154,49 +150,15 @@ export default function BookShowtime() {
     }
 
     if (selectedSeats.includes(seat.label)) {
-      // Deselect - unlock the seat
-      try {
-        const res = await fetch(`${API_BASE_URL}/seats/unlock`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ showId: showId, seatLabel: seat.label })
-        });
-        if (res.ok) {
-          setSelectedSeats(selectedSeats.filter(s => s !== seat.label));
-        } else {
-          toast.error('Failed to unlock seat');
-        }
-      } catch (error) {
-        toast.error('Error unlocking seat');
-      }
+      // Deselect seat locally
+      setSelectedSeats(selectedSeats.filter(s => s !== seat.label));
     } else {
-      // Select - lock the seat
+      // Select seat locally
       if (selectedSeats.length >= totalTickets) {
         toast.info(`You can only select ${totalTickets} seats`);
         return;
       }
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/seats/lock`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ showId: showId, seatLabel: seat.label })
-        });
-        if (res.ok) {
-          setSelectedSeats([...selectedSeats, seat.label]);
-        } else {
-          const error = await res.json();
-          toast.error(error.message || 'Failed to lock seat');
-        }
-      } catch (error) {
-        toast.error('Error locking seat');
-      }
+      setSelectedSeats([...selectedSeats, seat.label]);
     }
   };
 
@@ -284,7 +246,6 @@ export default function BookShowtime() {
               onSeatClick={handleSeatClick}
               selectedSeats={selectedSeats}
               bookedSeats={seatStatuses.filter(seat => seat.status === 'BOOKED').map(seat => seat.seatLabel)}
-              lockedSeats={seatStatuses.filter(seat => seat.status === 'LOCKED').map(seat => seat.seatLabel)}
               showScreen={true}
               showLegend={true}
               interactive={true}
