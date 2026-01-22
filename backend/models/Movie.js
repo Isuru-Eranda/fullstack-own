@@ -1,9 +1,5 @@
 const mongoose = require('mongoose');
 
-/**
- * Movie Schema
- * Represents a movie in the cinema management system
- */
 const movieSchema = new mongoose.Schema(
   {
     /**
@@ -190,7 +186,7 @@ const movieSchema = new mongoose.Schema(
     },
   },
   { 
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true, 
   }
 );
 

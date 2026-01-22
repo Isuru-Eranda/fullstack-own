@@ -22,7 +22,7 @@ const hallSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cinema',
       required: function() {
-        return this.isNew; // Only require for new documents
+        return this.isNew; 
       },
       index: true,
     },
@@ -58,7 +58,7 @@ const hallSchema = new mongoose.Schema(
         default: [],
       },
       partitions: {
-        type: [Number], // Array of column indices where aisles exist
+        type: [Number], 
         default: [],
       },
     },

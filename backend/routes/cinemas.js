@@ -10,8 +10,7 @@ router.get('/', cinemaController.listCinemas);
 // Get single cinema
 router.get('/:id', cinemaController.getCinema);
 
-// Create - protect for admins if auth middleware available
-// Use field name 'image' for upload
+
 router.post('/', uploadSingle('image', 'cinemas'), cinemaController.createCinema);
 
 // Update cinema

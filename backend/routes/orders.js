@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.get('/', protect, getUserOrders);
 router.get('/:id/receipt', protect, getOrderReceipt);
-// Return order details to the user (used by review links)
 router.get('/:id', protect, getOrderById);
 
 // Admin routes

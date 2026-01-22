@@ -17,7 +17,7 @@ const showtimeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Cinema",
     required: function() {
-      return this.isNew; // Only require for new documents
+      return this.isNew; 
     },
     index: true,
   },

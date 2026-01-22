@@ -34,10 +34,6 @@ const upload = multer({
   },
 });
 
-/**
- * Middleware to upload file(s) to B2 after multer processes it
- * Replaces the file object(s) with B2 URL(s)
- */
 const uploadToB2Middleware = (folder = 'movies') => async (req, res, next) => {
   try {
     // Handle single file upload
@@ -112,10 +108,7 @@ const uploadToB2Middleware = (folder = 'movies') => async (req, res, next) => {
   }
 };
 
-/**
- * Error handling middleware for multer
- * Handles file upload errors and provides appropriate responses
- */
+
 const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     // Handle multer-specific errors

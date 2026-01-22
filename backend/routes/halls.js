@@ -9,7 +9,7 @@ const {
 } = require('../controllers/hallController');
 const { protect, isAdmin } = require('../middleware/auth');
 
-// Public (you can change to protect/isAdmin if you want only admins)
+
 router.get('/', getAllHalls);
 router.get('/:id', getHallById);
 

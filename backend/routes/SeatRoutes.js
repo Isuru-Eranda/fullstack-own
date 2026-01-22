@@ -22,6 +22,6 @@ router.post("/unlock", protect, unlockSeat);
 // Admin routes - Seat management
 router.post("/initialize", protect, isAdmin, initializeSeats);
 router.post("/sync", protect, isAdmin, syncSeatsFromHall);
-router.post("/clear-expired", clearExpiredLocks); // Can be called by cron job
+router.post("/clear-expired", clearExpiredLocks); 
 
 module.exports = router;

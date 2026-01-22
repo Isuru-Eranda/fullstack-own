@@ -2,7 +2,6 @@ import { useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { AuthProvider } from './context/AuthProvider';
-// Toast container moved to main.jsx to ensure it mounts once at app root
 import LoadingLogo from './components/LoadingLogo';
 import Home from './pages/Home';
 import Login from './pages/Login';

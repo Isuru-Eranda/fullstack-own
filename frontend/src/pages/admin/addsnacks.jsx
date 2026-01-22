@@ -1,6 +1,5 @@
 import { useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -310,12 +309,7 @@ export default function AddSnacks() {
                         Add Snack
                     </Link>
                 </div>
-                
-                
-            
-
-            </div>
-            
+            </div>        
         </div>
     );
 }

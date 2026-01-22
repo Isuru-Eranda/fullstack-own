@@ -13,7 +13,6 @@ const {
 } = require("../controllers/showtimeController");
 const { protect, isAdmin } = require("../middleware/auth");
 
-// ===================== PUBLIC ROUTES =====================
 /**
  * @route   GET /api/showtimes
  * @desc    Get all showtimes with filtering and pagination
@@ -49,7 +48,6 @@ router.get("/:id", getShowtimeById);
  */
 router.post("/check-availability", checkAvailability);
 
-// ===================== PROTECTED ROUTES (Admin Only) =====================
 /**
  * @route   POST /api/showtimes
  * @desc    Create a new showtime

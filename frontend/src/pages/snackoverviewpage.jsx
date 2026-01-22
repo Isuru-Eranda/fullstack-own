@@ -34,7 +34,7 @@ export default function SnackOverviewPage() {
             console.log('API URL:', apiUrl);
             axios.get(apiUrl)
                 .then((response) => {
-                    console.log('Snack data:', response.data); // Debug log
+                    console.log('Snack data:', response.data); 
                     setSnack(response.data.snack || response.data); // Handle both nested and direct response
                     setStatus('loaded');
                 }).catch((error) => {

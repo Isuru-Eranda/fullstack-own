@@ -1,9 +1,7 @@
 const Show = require("../models/Show");
 const Hall = require("../models/Hall");
 
-/**
- * CREATE – Initialize seats for a showtime
- */
+
 exports.initializeSeats = async (req, res) => {
   try {
     const { showId } = req.body;
@@ -35,9 +33,7 @@ exports.initializeSeats = async (req, res) => {
   }
 };
 
-/**
- * READ – Get seat map
- */
+
 exports.getSeatMap = async (req, res) => {
   const { showId } = req.params;
   
@@ -85,9 +81,6 @@ exports.getSeatMap = async (req, res) => {
   }
 };
 
-/**
- * UPDATE – Lock seat (REAL-TIME)
- */
 exports.lockSeat = async (req, res) => {
   const { showId, seatLabel } = req.body;
   const userId = req.user.id;
@@ -120,7 +113,7 @@ exports.lockSeat = async (req, res) => {
 
     await show.save();
 
-    // 🔥 REAL-TIME UPDATE
+    //  REAL-TIME UPDATE
     io.to(showId).emit("seatUpdate", {
       seatLabel,
       status: "LOCKED",
@@ -133,9 +126,7 @@ exports.lockSeat = async (req, res) => {
   }
 };
 
-/**
- * UPDATE – Confirm booking
- */
+
 exports.confirmSeat = async (req, res) => {
   const { showId, seatLabel } = req.body;
   const userId = req.user.id;
@@ -159,9 +150,7 @@ exports.confirmSeat = async (req, res) => {
   res.json({ message: "Seat booked" });
 };
 
-/**
- * DELETE – Unlock/Release seat (timeout or user cancels)
- */
+
 exports.unlockSeat = async (req, res) => {
   try {
     const { showId, seatLabel } = req.body;
@@ -195,7 +184,7 @@ exports.unlockSeat = async (req, res) => {
 
       await show.save();
 
-      // 🔥 REAL-TIME UPDATE
+      // REAL-TIME UPDATE
       io.to(showId).emit("seatUpdate", {
         seatLabel,
         status: "AVAILABLE",
@@ -211,9 +200,7 @@ exports.unlockSeat = async (req, res) => {
   }
 };
 
-/**
- * DELETE – Clear expired locks (background job)
- */
+
 exports.clearExpiredLocks = async (req, res) => {
   try {
     const LOCK_TIMEOUT_MINUTES = 10; // Seats locked for more than 10 minutes
@@ -235,7 +222,7 @@ exports.clearExpiredLocks = async (req, res) => {
           seat.lockedAt = null;
           clearedCount++;
 
-          // 🔥 REAL-TIME UPDATE
+          // REAL-TIME UPDATE
           io.to(show._id.toString()).emit("seatUpdate", {
             seatLabel: seat.seatLabel,
             status: "AVAILABLE",
@@ -255,9 +242,7 @@ exports.clearExpiredLocks = async (req, res) => {
   }
 };
 
-/**
- * SYNC – Manually sync seats from hall to show
- */
+
 exports.syncSeatsFromHall = async (req, res) => {
   try {
     const { showId } = req.body;

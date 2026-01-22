@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // Generate JWT Token with 60 minutes expiration
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: '60m', // 60 minutes session
+    expiresIn: '60m',
   });
 };
 
@@ -14,18 +14,15 @@ exports.register = async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone } = req.body;
 
-    // Validation
     if (!firstName || !email || !password) {
       return res.status(400).json({ message: 'Please provide firstName, email, and password' });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Create user - set password into passwordHash so pre-save will hash it
     const user = await User.create({
       firstName,
       lastName: lastName || '',
@@ -34,23 +31,21 @@ exports.register = async (req, res) => {
       phone: phone || '',
     });
 
-    // Generate token
     const token = generateToken(user._id);
 
-    // Set httpOnly cookie with JWT token
     res.cookie('authToken', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      secure: process.env.NODE_ENV === 'production',
       // In production we need 'none' for cross-site cookies with secure; in development use 'lax' so localhost works
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/', // ensure cookie is sent for all API routes
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token, // Also send token in response for immediate use
+      token,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -72,57 +67,50 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
     let user;
 
-    // Check for admin login
     if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
       user = await User.findOne({ email: process.env.ADMIN_EMAIL });
       if (!user) {
-        // Create admin user with pre-hashed password
         user = new User({
           firstName: 'Admin',
           lastName: 'User',
           email: process.env.ADMIN_EMAIL,
-          passwordHash: '$2a$10$GbwZySMus.IEvTAxo//aX.3DPj8Bg.ZeI5sRmYEJV8JT5PLIZaa', // pre-hashed 'admin123'
-          role: 'admin'
+          passwordHash: '$2a$10$GbwZySMus.IEvTAxo//aX.3DPj8Bg.ZeI5sRmYEJV8JT5PLIZaa',
+          role: 'admin',
         });
         await user.save();
       }
     } else {
-      // Normal user login
       user = await User.findOne({ email }).select('+passwordHash');
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      // Check password
       const isPasswordMatch = await user.comparePassword(password);
       if (!isPasswordMatch) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
-    // Set httpOnly cookie with JWT token
     res.cookie('authToken', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/', // ensure cookie is sent for all API routes
-      maxAge: 60 * 60 * 1000, // 60 minutes
+      path: '/',
+      maxAge: 60 * 60 * 1000,
     });
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      token, // Also send token in response for immediate use
+      token,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -143,7 +131,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     res.status(200).json({
       success: true,
       user,
@@ -157,7 +145,6 @@ exports.getMe = async (req, res) => {
 // @route   POST /api/auth/logout
 exports.logout = async (req, res) => {
   try {
-    // Clear httpOnly cookie (match path and sameSite used when setting)
     res.clearCookie('authToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -180,13 +167,11 @@ exports.updateProfile = async (req, res) => {
   try {
     const { firstName, lastName, phone, currentPassword, newPassword } = req.body;
 
-    // Find user
     const user = await User.findById(req.user.id).select('+passwordHash');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If updating password, verify current password
     if (newPassword) {
       if (!currentPassword) {
         return res.status(400).json({ message: 'Current password is required to change password' });
@@ -195,10 +180,9 @@ exports.updateProfile = async (req, res) => {
       if (!isCurrentPasswordValid) {
         return res.status(400).json({ message: 'Current password is incorrect' });
       }
-      user.passwordHash = newPassword; // Will be hashed by pre-save middleware
+      user.passwordHash = newPassword;
     }
 
-    // Update other fields
     if (firstName !== undefined) user.firstName = firstName;
     if (lastName !== undefined) user.lastName = lastName;
     if (phone !== undefined) user.phone = phone;
@@ -226,12 +210,11 @@ exports.updateProfile = async (req, res) => {
 // @route   GET /api/auth/users
 exports.getAllUsers = async (req, res) => {
   try {
-    // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admin role required.' });
     }
 
-    const users = await User.find({}).select('-passwordHash'); // Exclude password hash
+    const users = await User.find({}).select('-passwordHash');
 
     res.status(200).json({
       success: true,
@@ -247,14 +230,12 @@ exports.getAllUsers = async (req, res) => {
 // @route   DELETE /api/auth/users/:id
 exports.deleteUser = async (req, res) => {
   try {
-    // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admin role required.' });
     }
 
     const { id } = req.params;
 
-    // Prevent admin from deleting themselves
     if (id === req.user.id) {
       return res.status(400).json({ message: 'Cannot delete your own account' });
     }
@@ -264,7 +245,6 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Prevent deleting other admins
     if (user.role === 'admin') {
       return res.status(400).json({ message: 'Cannot delete admin accounts' });
     }

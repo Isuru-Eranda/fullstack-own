@@ -9,9 +9,7 @@ import LoadingLogo from '../components/LoadingLogo';
 import { fetchMovies, deleteMovie } from '../services/movieService';
 import { getHalls } from '../services/hallService';
 
-/**
- * Movies Page Component - Displays list of movies with tabs for Now Showing and Coming Soon
- */
+
 export default function Movies() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();

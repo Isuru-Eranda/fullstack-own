@@ -78,8 +78,6 @@ export default function Home() {
   const handleBooking = (bookingData) => {
     console.log('Booking:', bookingData);
     alert(`Booking for "${bookingData.movieTitle}" at ${bookingData.cinemaName} on ${bookingData.date}`);
-    // TODO: Navigate to seat selection page
-    // navigate(`/booking/${bookingData.movieId}?date=${bookingData.date}&cinema=${bookingData.cinemaId}`);
   };
 
   return (

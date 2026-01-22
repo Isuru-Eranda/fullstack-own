@@ -1,8 +1,5 @@
 const Hall = require('../models/Hall');
 
-/**
- * Helper: generate a basic grid of seats (A1, A2, …)
- */
 const generateSeatGrid = (rows, cols) => {
   const seats = [];
   for (let r = 0; r < rows; r++) {
